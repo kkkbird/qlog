@@ -3,8 +3,8 @@
 Loggigng system use logrus and logstash hook with some predefined setting
 
 Depends on  
-* Logrus: [https://github.com/sirupsen/logrus]()
-* logrus-logstash-hook: [https://github.com/bshuster-repo/logrus-logstash-hook]()
+* Logrus: https://github.com/sirupsen/logrus
+* logrus-logstash-hook: https://github.com/bshuster-repo/logrus-logstash-hook
 ## how to use
 ``` shell
 go get -u -v github.com/sirupsen/logrus
