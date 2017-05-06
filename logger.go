@@ -118,9 +118,13 @@ func runtimeFields() logrus.Fields {
 	}
 }
 
+func withRuntimeFields() *logrus.Entry {
+	return qlogger.Logger().WithFields(runtimeFields())
+}
+
 // WithError creates an entry from the standard logger and adds an error to it, using the value defined in ErrorKey as key.
 func WithError(err error) *logrus.Entry {
-	return qlogger.Logger().WithField(logrus.ErrorKey, err)
+	return WithField(logrus.ErrorKey, err)
 }
 
 // WithField creates an entry from the standard logger and adds a field to
@@ -129,7 +133,9 @@ func WithError(err error) *logrus.Entry {
 // Note that it doesn't log until you call Debug, Print, Info, Warn, Fatal
 // or Panic on the Entry it returns.
 func WithField(key string, value interface{}) *logrus.Entry {
-	return qlogger.Logger().WithField(key, value)
+	defaultFields := runtimeFields()
+	defaultFields[key] = value
+	return qlogger.Logger().WithFields(defaultFields)
 }
 
 // WithFields creates an entry from the standard logger and adds multiple
@@ -139,127 +145,131 @@ func WithField(key string, value interface{}) *logrus.Entry {
 // Note that it doesn't log until you call Debug, Print, Info, Warn, Fatal
 // or Panic on the Entry it returns.
 func WithFields(fields logrus.Fields) *logrus.Entry {
-	return qlogger.Logger().WithFields(fields)
+	defaultFields := runtimeFields()
+	for k, v := range fields {
+		defaultFields[k] = v
+	}
+	return qlogger.Logger().WithFields(defaultFields)
 }
 
 // Debug logs a message at level Debug on the standard logger.
 func Debug(args ...interface{}) {
-	WithFields(runtimeFields()).Debug(args...)
+	withRuntimeFields().Debug(args...)
 }
 
 // Print logs a message at level Info on the standard logger.
 func Print(args ...interface{}) {
-	WithFields(runtimeFields()).Print(args...)
+	withRuntimeFields().Print(args...)
 }
 
 // Info logs a message at level Info on the standard logger.
 func Info(args ...interface{}) {
-	WithFields(runtimeFields()).Info(args...)
+	withRuntimeFields().Info(args...)
 }
 
 // Warn logs a message at level Warn on the standard logger.
 func Warn(args ...interface{}) {
-	WithFields(runtimeFields()).Warn(args...)
+	withRuntimeFields().Warn(args...)
 }
 
 // Warning logs a message at level Warn on the standard logger.
 func Warning(args ...interface{}) {
-	WithFields(runtimeFields()).Warning(args...)
+	withRuntimeFields().Warning(args...)
 }
 
 // Error logs a message at level Error on the standard logger.
 func Error(args ...interface{}) {
-	WithFields(runtimeFields()).Error(args...)
+	withRuntimeFields().Error(args...)
 }
 
 // Panic logs a message at level Panic on the standard logger.
 func Panic(args ...interface{}) {
-	WithFields(runtimeFields()).Panic(args...)
+	withRuntimeFields().Panic(args...)
 }
 
 // Fatal logs a message at level Fatal on the standard logger.
 func Fatal(args ...interface{}) {
-	WithFields(runtimeFields()).Fatal(args...)
+	withRuntimeFields().Fatal(args...)
 }
 
 // Debugf logs a message at level Debug on the standard logger.
 func Debugf(format string, args ...interface{}) {
-	WithFields(runtimeFields()).Debugf(format, args...)
+	withRuntimeFields().Debugf(format, args...)
 }
 
 // Printf logs a message at level Info on the standard logger.
 func Printf(format string, args ...interface{}) {
-	WithFields(runtimeFields()).Printf(format, args...)
+	withRuntimeFields().Printf(format, args...)
 }
 
 // Infof logs a message at level Info on the standard logger.
 func Infof(format string, args ...interface{}) {
-	WithFields(runtimeFields()).Infof(format, args...)
+	withRuntimeFields().Infof(format, args...)
 }
 
 // Warnf logs a message at level Warn on the standard logger.
 func Warnf(format string, args ...interface{}) {
-	WithFields(runtimeFields()).Warnf(format, args...)
+	withRuntimeFields().Warnf(format, args...)
 }
 
 // Warningf logs a message at level Warn on the standard logger.
 func Warningf(format string, args ...interface{}) {
-	WithFields(runtimeFields()).Warningf(format, args...)
+	withRuntimeFields().Warningf(format, args...)
 }
 
 // Errorf logs a message at level Error on the standard logger.
 func Errorf(format string, args ...interface{}) {
-	WithFields(runtimeFields()).Errorf(format, args...)
+	withRuntimeFields().Errorf(format, args...)
 }
 
 // Panicf logs a message at level Panic on the standard logger.
 func Panicf(format string, args ...interface{}) {
-	WithFields(runtimeFields()).Panicf(format, args...)
+	withRuntimeFields().Panicf(format, args...)
 }
 
 // Fatalf logs a message at level Fatal on the standard logger.
 func Fatalf(format string, args ...interface{}) {
-	WithFields(runtimeFields()).Fatalf(format, args...)
+	withRuntimeFields().Fatalf(format, args...)
 }
 
 // Debugln logs a message at level Debug on the standard logger.
 func Debugln(args ...interface{}) {
-	WithFields(runtimeFields()).Debugln(args...)
+	withRuntimeFields().Debugln(args...)
 }
 
 // Println logs a message at level Info on the standard logger.
 func Println(args ...interface{}) {
-	WithFields(runtimeFields()).Println(args...)
+	withRuntimeFields().Println(args...)
 }
 
 // Infoln logs a message at level Info on the standard logger.
 func Infoln(args ...interface{}) {
-	WithFields(runtimeFields()).Infoln(args...)
+	withRuntimeFields().Infoln(args...)
 }
 
 // Warnln logs a message at level Warn on the standard logger.
 func Warnln(args ...interface{}) {
-	WithFields(runtimeFields()).Warnln(args...)
+	withRuntimeFields().Warnln(args...)
 }
 
 // Warningln logs a message at level Warn on the standard logger.
 func Warningln(args ...interface{}) {
-	WithFields(runtimeFields()).Warningln(args...)
+	withRuntimeFields().Warningln(args...)
 }
 
 // Errorln logs a message at level Error on the standard logger.
 func Errorln(args ...interface{}) {
-	WithFields(runtimeFields()).Errorln(args...)
+	withRuntimeFields().Errorln(args...)
 }
 
 // Panicln logs a message at level Panic on the standard logger.
 func Panicln(args ...interface{}) {
-	WithFields(runtimeFields()).Panicln(args...)
+	withRuntimeFields().Panicln(args...)
 }
 
 // Fatalln logs a message at level Fatal on the standard logger.
 func Fatalln(args ...interface{}) {
-	WithFields(runtimeFields()).Fatalln(args...)
+	withRuntimeFields().Fatalln(args...)
 }
 
 func init() {
