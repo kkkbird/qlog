@@ -8,7 +8,7 @@ Depends on
 ## how to use
 ``` shell
 go get -u -v github.com/sirupsen/logrus
-go get -u -v github.com/bshuster-repo/logrus-logstash-hook
+go get -u -v github.com/kkkbird/logrus-logstash-hook
 go get -u -v github.com/kkkbird/qlog
 ```  
 ## example

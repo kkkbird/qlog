@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/bshuster-repo/logrus-logstash-hook"
+	"github.com/kkkbird/logrus-logstash-hook"
 )
 
 var (
@@ -118,13 +118,11 @@ func runtimeFields() logrus.Fields {
 	}
 }
 
-func withRuntimeFields() *logrus.Entry {
-	return qlogger.Logger().WithFields(runtimeFields())
-}
-
 // WithError creates an entry from the standard logger and adds an error to it, using the value defined in ErrorKey as key.
 func WithError(err error) *logrus.Entry {
-	return WithField(logrus.ErrorKey, err)
+	defaultFields := runtimeFields()
+	defaultFields[logrus.ErrorKey] = err
+	return qlogger.Logger().WithFields(defaultFields)
 }
 
 // WithField creates an entry from the standard logger and adds a field to
@@ -154,122 +152,124 @@ func WithFields(fields logrus.Fields) *logrus.Entry {
 
 // Debug logs a message at level Debug on the standard logger.
 func Debug(args ...interface{}) {
-	withRuntimeFields().Debug(args...)
+
+	qlogger.Logger().WithFields(runtimeFields()).Debug(args...)
 }
 
 // Print logs a message at level Info on the standard logger.
 func Print(args ...interface{}) {
-	withRuntimeFields().Print(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Print(args...)
 }
 
 // Info logs a message at level Info on the standard logger.
 func Info(args ...interface{}) {
-	withRuntimeFields().Info(args...)
+	defaultFields := runtimeFields()
+	qlogger.Logger().WithFields(defaultFields).Info(args...)
 }
 
 // Warn logs a message at level Warn on the standard logger.
 func Warn(args ...interface{}) {
-	withRuntimeFields().Warn(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Warn(args...)
 }
 
 // Warning logs a message at level Warn on the standard logger.
 func Warning(args ...interface{}) {
-	withRuntimeFields().Warning(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Warning(args...)
 }
 
 // Error logs a message at level Error on the standard logger.
 func Error(args ...interface{}) {
-	withRuntimeFields().Error(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Error(args...)
 }
 
 // Panic logs a message at level Panic on the standard logger.
 func Panic(args ...interface{}) {
-	withRuntimeFields().Panic(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Panic(args...)
 }
 
 // Fatal logs a message at level Fatal on the standard logger.
 func Fatal(args ...interface{}) {
-	withRuntimeFields().Fatal(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Fatal(args...)
 }
 
 // Debugf logs a message at level Debug on the standard logger.
 func Debugf(format string, args ...interface{}) {
-	withRuntimeFields().Debugf(format, args...)
+	qlogger.Logger().WithFields(runtimeFields()).Debugf(format, args...)
 }
 
 // Printf logs a message at level Info on the standard logger.
 func Printf(format string, args ...interface{}) {
-	withRuntimeFields().Printf(format, args...)
+	qlogger.Logger().WithFields(runtimeFields()).Printf(format, args...)
 }
 
 // Infof logs a message at level Info on the standard logger.
 func Infof(format string, args ...interface{}) {
-	withRuntimeFields().Infof(format, args...)
+	qlogger.Logger().WithFields(runtimeFields()).Infof(format, args...)
 }
 
 // Warnf logs a message at level Warn on the standard logger.
 func Warnf(format string, args ...interface{}) {
-	withRuntimeFields().Warnf(format, args...)
+	qlogger.Logger().WithFields(runtimeFields()).Warnf(format, args...)
 }
 
 // Warningf logs a message at level Warn on the standard logger.
 func Warningf(format string, args ...interface{}) {
-	withRuntimeFields().Warningf(format, args...)
+	qlogger.Logger().WithFields(runtimeFields()).Warningf(format, args...)
 }
 
 // Errorf logs a message at level Error on the standard logger.
 func Errorf(format string, args ...interface{}) {
-	withRuntimeFields().Errorf(format, args...)
+	qlogger.Logger().WithFields(runtimeFields()).Errorf(format, args...)
 }
 
 // Panicf logs a message at level Panic on the standard logger.
 func Panicf(format string, args ...interface{}) {
-	withRuntimeFields().Panicf(format, args...)
+	qlogger.Logger().WithFields(runtimeFields()).Panicf(format, args...)
 }
 
 // Fatalf logs a message at level Fatal on the standard logger.
 func Fatalf(format string, args ...interface{}) {
-	withRuntimeFields().Fatalf(format, args...)
+	qlogger.Logger().WithFields(runtimeFields()).Fatalf(format, args...)
 }
 
 // Debugln logs a message at level Debug on the standard logger.
 func Debugln(args ...interface{}) {
-	withRuntimeFields().Debugln(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Debugln(args...)
 }
 
 // Println logs a message at level Info on the standard logger.
 func Println(args ...interface{}) {
-	withRuntimeFields().Println(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Println(args...)
 }
 
 // Infoln logs a message at level Info on the standard logger.
 func Infoln(args ...interface{}) {
-	withRuntimeFields().Infoln(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Infoln(args...)
 }
 
 // Warnln logs a message at level Warn on the standard logger.
 func Warnln(args ...interface{}) {
-	withRuntimeFields().Warnln(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Warnln(args...)
 }
 
 // Warningln logs a message at level Warn on the standard logger.
 func Warningln(args ...interface{}) {
-	withRuntimeFields().Warningln(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Warningln(args...)
 }
 
 // Errorln logs a message at level Error on the standard logger.
 func Errorln(args ...interface{}) {
-	withRuntimeFields().Errorln(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Errorln(args...)
 }
 
 // Panicln logs a message at level Panic on the standard logger.
 func Panicln(args ...interface{}) {
-	withRuntimeFields().Panicln(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Panicln(args...)
 }
 
 // Fatalln logs a message at level Fatal on the standard logger.
 func Fatalln(args ...interface{}) {
-	withRuntimeFields().Fatalln(args...)
+	qlogger.Logger().WithFields(runtimeFields()).Fatalln(args...)
 }
 
 func init() {

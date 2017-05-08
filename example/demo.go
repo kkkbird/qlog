@@ -1,9 +1,8 @@
 package main
 
 import (
-	"flag"
-
 	"errors"
+	"flag"
 
 	"github.com/Sirupsen/logrus"
 	log "github.com/kkkbird/qlog"
