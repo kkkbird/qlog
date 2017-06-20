@@ -4,8 +4,8 @@ import (
 	"errors"
 	"flag"
 
-	"github.com/Sirupsen/logrus"
 	log "github.com/kkkbird/qlog"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {

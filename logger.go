@@ -2,6 +2,7 @@ package qlog
 
 import (
 	"flag"
+	"net"
 	"os"
 	"runtime"
 	"strings"
@@ -12,8 +13,9 @@ import (
 
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/kkkbird/logrus-logstash-hook"
+	colorable "github.com/mattn/go-colorable"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -56,10 +58,12 @@ func (l *QLogger) prepare() (err error) {
 
 	if len(l.logdir) == 0 {
 		l.logger = &logrus.Logger{
-			Out: os.Stderr,
+			//Out: os.Stderr,
+			Out: colorable.NewColorableStdout(),
 			Formatter: &logrus.TextFormatter{
+				ForceColors:     true,
 				FullTimestamp:   true,
-				TimestampFormat: time.RFC3339Nano,
+				TimestampFormat: time.StampMicro,
 			},
 			Hooks: make(logrus.LevelHooks),
 			Level: loglevel,
@@ -85,11 +89,16 @@ func (l *QLogger) prepare() (err error) {
 		if err != nil {
 			return err
 		}
-		hook, err := logrus_logstash.NewHookWithFieldsAndPrefix(logstashUrl.Scheme, logstashUrl.Host, l.logstashtype, logrus.Fields{
-			"PID":       pid,
-			"_hostname": host,
-			"_user":     userName,
-		}, "_")
+
+		conn, err := net.Dial(logstashUrl.Scheme, logstashUrl.Host)
+
+		if err != nil {
+			return err
+		}
+
+		hook := logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{
+			"type": l.logstashtype,
+		}))
 
 		if err != nil {
 			return err
