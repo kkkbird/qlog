@@ -175,7 +175,11 @@ func Debug(args ...interface{}) {
 
 // Print logs a message at level Info on the standard logger.
 func Print(args ...interface{}) {
-	Info(args...)
+	if qlogger.withRuntimeFields {
+		qlogger.Logger().WithFields(runtimeFields(2)).Info(args...)
+	} else {
+		qlogger.Logger().Info(args...)
+	}
 }
 
 // Info logs a message at level Info on the standard logger.
@@ -198,7 +202,11 @@ func Warn(args ...interface{}) {
 
 // Warning logs a message at level Warn on the standard logger.
 func Warning(args ...interface{}) {
-	Warn(args...)
+	if qlogger.withRuntimeFields {
+		qlogger.Logger().WithFields(runtimeFields(2)).Warn(args...)
+	} else {
+		qlogger.Logger().Warn(args...)
+	}
 }
 
 // Error logs a message at level Error on the standard logger.
@@ -239,7 +247,11 @@ func Debugf(format string, args ...interface{}) {
 
 // Printf logs a message at level Info on the standard logger.
 func Printf(format string, args ...interface{}) {
-	Infof(format, args...)
+	if qlogger.withRuntimeFields {
+		qlogger.Logger().WithFields(runtimeFields(2)).Infof(format, args...)
+	} else {
+		qlogger.Logger().Infof(format, args...)
+	}
 }
 
 // Infof logs a message at level Info on the standard logger.
@@ -262,7 +274,11 @@ func Warnf(format string, args ...interface{}) {
 
 // Warningf logs a message at level Warn on the standard logger.
 func Warningf(format string, args ...interface{}) {
-	Warn(format, args)
+	if qlogger.withRuntimeFields {
+		qlogger.Logger().WithFields(runtimeFields(2)).Warnf(format, args...)
+	} else {
+		qlogger.Logger().Warnf(format, args...)
+	}
 }
 
 // Errorf logs a message at level Error on the standard logger.
@@ -303,7 +319,11 @@ func Debugln(args ...interface{}) {
 
 // Println logs a message at level Info on the standard logger.
 func Println(args ...interface{}) {
-	Infoln(args...)
+	if qlogger.withRuntimeFields {
+		qlogger.Logger().WithFields(runtimeFields(2)).Infoln(args...)
+	} else {
+		qlogger.Logger().Infoln(args...)
+	}
 }
 
 // Infoln logs a message at level Info on the standard logger.
@@ -326,7 +346,11 @@ func Warnln(args ...interface{}) {
 
 // Warningln logs a message at level Warn on the standard logger.
 func Warningln(args ...interface{}) {
-	Warnln(args...)
+	if qlogger.withRuntimeFields {
+		qlogger.Logger().WithFields(runtimeFields(2)).Warnln(args...)
+	} else {
+		qlogger.Logger().Warnln(args...)
+	}
 }
 
 // Errorln logs a message at level Error on the standard logger.
