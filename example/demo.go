@@ -34,4 +34,9 @@ func main() {
 		"goobye": "moon",
 	}).Info("This is a WithFields INFO message")
 	log.WithError(errors.New("An error")).Warn("with error warning")
+
+	entry := log.WithField("test", "1")
+	entry.Debug("This is a DEBUG message from entry")
+	entry.Info("This is a INFO message from entry")
+
 }
