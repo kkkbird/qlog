@@ -2,6 +2,7 @@ package qlog
 
 import (
 	"flag"
+	"io"
 	"net"
 	"os"
 	"runtime"
@@ -60,32 +61,45 @@ func (l *QLogger) prepare() (err error) {
 		return err
 	}
 
-	if len(l.logdir) == 0 {
-		l.logger = &logrus.Logger{
-			//Out: os.Stderr,
-			Out: colorable.NewColorableStdout(),
-			Formatter: &logrus.TextFormatter{
-				//ForceColors:     true,
-				FullTimestamp:   true,
-				TimestampFormat: logTimeStamp,
-			},
-			Hooks: make(logrus.LevelHooks),
-			Level: loglevel,
+	var formatter logrus.Formatter
+	switch l.logtype {
+	case "classic":
+		formatter = &ClassicFormatter{
+			TimestampFormat: logTimeStamp,
 		}
+	case "json":
+		formatter = &logrus.JSONFormatter{
+			TimestampFormat: logTimeStamp,
+		}
+	case "kv":
+		fallthrough
+	default:
+		formatter = &logrus.TextFormatter{
+			FullTimestamp:   true,
+			TimestampFormat: logTimeStamp,
+		}
+	}
+
+	var out io.Writer
+
+	if len(l.logdir) == 0 {
+		if _formatter, ok := formatter.(*logrus.TextFormatter); ok {
+			_formatter.ForceColors = true
+		}
+		out = colorable.NewColorableStdout()
 	} else {
 		file, _, err := create(time.Now())
 		if err != nil {
 			return err
 		}
-		l.logger = &logrus.Logger{
-			Out: file,
-			Formatter: &logrus.TextFormatter{
-				FullTimestamp:   true,
-				TimestampFormat: logTimeStamp,
-			},
-			Hooks: make(logrus.LevelHooks),
-			Level: loglevel,
-		}
+		out = file
+	}
+	l.logger = &logrus.Logger{
+		//Out: os.Stderr,
+		Out:       out,
+		Formatter: formatter,
+		Hooks:     make(logrus.LevelHooks),
+		Level:     loglevel,
 	}
 
 	if len(l.logstash) > 0 {
@@ -381,6 +395,7 @@ func Fatalln(args ...interface{}) {
 }
 
 func init() {
+	flag.StringVar(&qlogger.logtype, "logtype", "kv", "logtype:kv,json,classic")
 	flag.StringVar(&qlogger.loglevel, "loglevel", "info", "log level:debug,info,waring,fatal,panic")
 	flag.StringVar(&qlogger.logdir, "logdir", "", "log dir, leave empty to log to stderr")
 	flag.StringVar(&qlogger.logstash, "logstash", "", "logstash address, also log to logstash, example: udp://192.168.0.92:5000")
