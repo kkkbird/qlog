@@ -79,15 +79,16 @@ func (f *ClassicFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 	timestampFormat := f.TimestampFormat
 	if timestampFormat == "" {
-		timestampFormat = logTimeStamp
+		timestampFormat = longTimeStamp
 	}
 
 	if !f.DisableTimestamp {
 		b.WriteString(entry.Time.Format(timestampFormat))
 	}
 
-	f.appendValueOnly(b, fmt.Sprintf("%s@%s", program, host))
+	//runtime is enabled
 	if file, ok := entry.Data["FILE"]; ok {
+		f.appendValueOnly(b, fmt.Sprintf("%s@%s", program, host))
 		if line, ok := entry.Data["LINE"]; ok {
 			f.appendValueOnly(b, fmt.Sprintf("%s:%d", file, line))
 		}

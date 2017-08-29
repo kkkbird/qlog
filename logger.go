@@ -25,16 +25,18 @@ var (
 )
 
 const (
-	logTimeStamp = "2006/01/02 15:04:05.000000Z07:00"
+	longTimeStamp  = "2006/01/02 15:04:05.000000Z07:00"
+	shortTimeStamp = "06/01/02 15:04:05.000"
 )
 
 type QLogger struct {
 	logger            *logrus.Logger
 	loglevel          string
-	logtype           string
+	logfmt            string
 	logdir            string
 	logstash          string
 	logstashtype      string
+	logoptions        string
 	withRuntimeFields bool
 	initOnce          sync.Once
 }
@@ -61,22 +63,49 @@ func (l *QLogger) prepare() (err error) {
 		return err
 	}
 
+	l.withRuntimeFields = true
+	timestampFormat := ""
+	disableTimeStamp := false
+
+	options := strings.Split(strings.ToLower(l.logoptions), ",")
+
+	for _, opt := range options {
+		if len(opt) == 0 {
+			continue
+		}
+		switch strings.ToLower(opt) {
+		case "shorttime":
+			timestampFormat = shortTimeStamp
+		case "longtime":
+			timestampFormat = longTimeStamp
+		case "notime":
+			disableTimeStamp = true
+		case "disableruntime":
+			l.withRuntimeFields = false
+		default:
+			return fmt.Errorf("not a valid logoption:%s", opt)
+		}
+	}
+
 	var formatter logrus.Formatter
-	switch l.logtype {
+	switch l.logfmt {
 	case "classic":
 		formatter = &ClassicFormatter{
-			TimestampFormat: logTimeStamp,
+			TimestampFormat:  timestampFormat,
+			DisableTimestamp: disableTimeStamp,
 		}
 	case "json":
 		formatter = &logrus.JSONFormatter{
-			TimestampFormat: logTimeStamp,
+			TimestampFormat:  timestampFormat,
+			DisableTimestamp: disableTimeStamp,
 		}
 	case "kv":
 		fallthrough
 	default:
 		formatter = &logrus.TextFormatter{
-			FullTimestamp:   true,
-			TimestampFormat: logTimeStamp,
+			FullTimestamp:    true,
+			TimestampFormat:  timestampFormat,
+			DisableTimestamp: disableTimeStamp,
 		}
 	}
 
@@ -395,12 +424,14 @@ func Fatalln(args ...interface{}) {
 }
 
 func init() {
-	flag.StringVar(&qlogger.logtype, "logtype", "kv", "logtype:kv,json,classic")
+	flag.StringVar(&qlogger.logfmt, "logfmt", "kv", "logfmt:kv,json,classic")
 	flag.StringVar(&qlogger.loglevel, "loglevel", "info", "log level:debug,info,waring,fatal,panic")
+	flag.StringVar(&qlogger.logoptions, "logoptions", "longtime", "log options, longtime|shorttime|notime, disableruntime")
 	flag.StringVar(&qlogger.logdir, "logdir", "", "log dir, leave empty to log to stderr")
 	flag.StringVar(&qlogger.logstash, "logstash", "", "logstash address, also log to logstash, example: udp://192.168.0.92:5000")
 	flag.StringVar(&qlogger.logstashtype, "logstashtype", program, "logstash type field, only available when logstash mode")
-	flag.BoolVar(&qlogger.withRuntimeFields, "logruntime", true, "log with runtime fields")
+
+	//flag.BoolVar(&qlogger.withRuntimeFields, "logruntime", true, "log with runtime fields")
 }
 
 //get logrus logger
