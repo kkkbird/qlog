@@ -1,6 +1,7 @@
 package qlog
 
 import (
+	"errors"
 	"flag"
 	"io"
 	"net"
@@ -39,6 +40,8 @@ type QLogger struct {
 	logoptions        string
 	withRuntimeFields bool
 	initOnce          sync.Once
+	initMutex         sync.Mutex
+	flushed           bool
 }
 
 func (l *QLogger) Logger() *logrus.Logger {
@@ -53,10 +56,33 @@ func (l *QLogger) Logger() *logrus.Logger {
 	return l.logger
 }
 
+func (l *QLogger) Flush() {
+	l.initMutex.Lock()
+	defer l.initMutex.Unlock()
+
+	l.flushed = true
+
+	if l.logger == nil {
+		return
+	}
+
+	if file, isOk := l.logger.Out.(*os.File); isOk {
+		file.Close()
+	}
+}
+
 func (l *QLogger) prepare() (err error) {
 	if !flag.Parsed() {
 		return fmt.Errorf("flag not Parsed, call flag.Parse() first")
 	}
+
+	l.initMutex.Lock()
+	defer l.initMutex.Unlock()
+
+	if l.flushed {
+		return errors.New("already flushed ")
+	}
+
 	var loglevel logrus.Level
 
 	if loglevel, err = logrus.ParseLevel(l.loglevel); err != nil {
@@ -176,8 +202,9 @@ func runtimeFields(skip int) logrus.Fields {
 
 // WithError creates an entry from the standard logger and adds an error to it, using the value defined in ErrorKey as key.
 func WithError(err error) *Entry {
+	e := qlogger.Logger().WithError(err) //call Logger() first to make sure prepare could be called first
 	return &Entry{
-		e:                 qlogger.Logger().WithError(err),
+		e:                 e,
 		withRunTimeFields: qlogger.withRuntimeFields,
 	}
 }
@@ -188,8 +215,9 @@ func WithError(err error) *Entry {
 // Note that it doesn't log until you call Debug, Print, Info, Warn, Fatal
 // or Panic on the Entry it returns.
 func WithField(key string, value interface{}) *Entry {
+	e := qlogger.Logger().WithField(key, value) //call Logger() first to make sure prepare could be called first
 	return &Entry{
-		e:                 qlogger.Logger().WithField(key, value),
+		e:                 e,
 		withRunTimeFields: qlogger.withRuntimeFields,
 	}
 }
@@ -201,225 +229,251 @@ func WithField(key string, value interface{}) *Entry {
 // Note that it doesn't log until you call Debug, Print, Info, Warn, Fatal
 // or Panic on the Entry it returns.
 func WithFields(fields logrus.Fields) *Entry {
+	e := qlogger.Logger().WithFields(fields) //call Logger() first to make sure prepare could be called first
 	return &Entry{
-		e:                 qlogger.Logger().WithFields(fields),
+		e:                 e,
 		withRunTimeFields: qlogger.withRuntimeFields,
 	}
 }
 
 // Debug logs a message at level Debug on the standard logger.
 func Debug(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
+
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Debug(args...)
+		l.WithFields(runtimeFields(2)).Debug(args...)
 	} else {
-		qlogger.Logger().Debug(args...)
+		l.Debug(args...)
 	}
 }
 
 // Print logs a message at level Info on the standard logger.
 func Print(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Info(args...)
+		l.WithFields(runtimeFields(2)).Info(args...)
 	} else {
-		qlogger.Logger().Info(args...)
+		l.Info(args...)
 	}
 }
 
 // Info logs a message at level Info on the standard logger.
 func Info(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Info(args...)
+		l.WithFields(runtimeFields(2)).Info(args...)
 	} else {
-		qlogger.Logger().Info(args...)
+		l.Info(args...)
 	}
 }
 
 // Warn logs a message at level Warn on the standard logger.
 func Warn(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Warn(args...)
+		l.WithFields(runtimeFields(2)).Warn(args...)
 	} else {
-		qlogger.Logger().Warn(args...)
+		l.Warn(args...)
 	}
 }
 
 // Warning logs a message at level Warn on the standard logger.
 func Warning(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Warn(args...)
+		l.WithFields(runtimeFields(2)).Warn(args...)
 	} else {
-		qlogger.Logger().Warn(args...)
+		l.Warn(args...)
 	}
 }
 
 // Error logs a message at level Error on the standard logger.
 func Error(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Error(args...)
+		l.WithFields(runtimeFields(2)).Error(args...)
 	} else {
-		qlogger.Logger().Error(args...)
+		l.Error(args...)
 	}
 }
 
 // Panic logs a message at level Panic on the standard logger.
 func Panic(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Panic(args...)
+		l.WithFields(runtimeFields(2)).Panic(args...)
 	} else {
-		qlogger.Logger().Panic(args...)
+		l.Panic(args...)
 	}
 }
 
 // Fatal logs a message at level Fatal on the standard logger.
 func Fatal(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Fatal(args...)
+		l.WithFields(runtimeFields(2)).Fatal(args...)
 	} else {
-		qlogger.Logger().Fatal(args...)
+		l.Fatal(args...)
 	}
 }
 
 // Debugf logs a message at level Debug on the standard logger.
 func Debugf(format string, args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Debugf(format, args...)
+		l.WithFields(runtimeFields(2)).Debugf(format, args...)
 	} else {
-		qlogger.Logger().Debugf(format, args...)
+		l.Debugf(format, args...)
 	}
 }
 
 // Printf logs a message at level Info on the standard logger.
 func Printf(format string, args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Infof(format, args...)
+		l.WithFields(runtimeFields(2)).Infof(format, args...)
 	} else {
-		qlogger.Logger().Infof(format, args...)
+		l.Infof(format, args...)
 	}
 }
 
 // Infof logs a message at level Info on the standard logger.
 func Infof(format string, args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Infof(format, args...)
+		l.WithFields(runtimeFields(2)).Infof(format, args...)
 	} else {
-		qlogger.Logger().Infof(format, args...)
+		l.Infof(format, args...)
 	}
 }
 
 // Warnf logs a message at level Warn on the standard logger.
 func Warnf(format string, args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Warnf(format, args...)
+		l.WithFields(runtimeFields(2)).Warnf(format, args...)
 	} else {
-		qlogger.Logger().Warnf(format, args...)
+		l.Warnf(format, args...)
 	}
 }
 
 // Warningf logs a message at level Warn on the standard logger.
 func Warningf(format string, args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Warnf(format, args...)
+		l.WithFields(runtimeFields(2)).Warnf(format, args...)
 	} else {
-		qlogger.Logger().Warnf(format, args...)
+		l.Warnf(format, args...)
 	}
 }
 
 // Errorf logs a message at level Error on the standard logger.
 func Errorf(format string, args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Errorf(format, args...)
+		l.WithFields(runtimeFields(2)).Errorf(format, args...)
 	} else {
-		qlogger.Logger().Errorf(format, args...)
+		l.Errorf(format, args...)
 	}
 }
 
 // Panicf logs a message at level Panic on the standard logger.
 func Panicf(format string, args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Panicf(format, args...)
+		l.WithFields(runtimeFields(2)).Panicf(format, args...)
 	} else {
-		qlogger.Logger().Panicf(format, args...)
+		l.Panicf(format, args...)
 	}
 }
 
 // Fatalf logs a message at level Fatal on the standard logger.
 func Fatalf(format string, args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Fatalf(format, args...)
+		l.WithFields(runtimeFields(2)).Fatalf(format, args...)
 	} else {
-		qlogger.Logger().Fatalf(format, args...)
+		l.Fatalf(format, args...)
 	}
 }
 
 // Debugln logs a message at level Debug on the standard logger.
 func Debugln(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Debugln(args...)
+		l.WithFields(runtimeFields(2)).Debugln(args...)
 	} else {
-		qlogger.Logger().Debugln(args...)
+		l.Debugln(args...)
 	}
 }
 
 // Println logs a message at level Info on the standard logger.
 func Println(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Infoln(args...)
+		l.WithFields(runtimeFields(2)).Infoln(args...)
 	} else {
-		qlogger.Logger().Infoln(args...)
+		l.Infoln(args...)
 	}
 }
 
 // Infoln logs a message at level Info on the standard logger.
 func Infoln(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Infoln(args...)
+		l.WithFields(runtimeFields(2)).Infoln(args...)
 	} else {
-		qlogger.Logger().Infoln(args...)
+		l.Infoln(args...)
 	}
 }
 
 // Warnln logs a message at level Warn on the standard logger.
 func Warnln(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Warnln(args...)
+		l.WithFields(runtimeFields(2)).Warnln(args...)
 	} else {
-		qlogger.Logger().Warnln(args...)
+		l.Warnln(args...)
 	}
 }
 
 // Warningln logs a message at level Warn on the standard logger.
 func Warningln(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Warnln(args...)
+		l.WithFields(runtimeFields(2)).Warnln(args...)
 	} else {
-		qlogger.Logger().Warnln(args...)
+		l.Warnln(args...)
 	}
 }
 
 // Errorln logs a message at level Error on the standard logger.
 func Errorln(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Errorln(args...)
+		l.WithFields(runtimeFields(2)).Errorln(args...)
 	} else {
-		qlogger.Logger().Errorln(args...)
+		l.Errorln(args...)
 	}
 }
 
 // Panicln logs a message at level Panic on the standard logger.
 func Panicln(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Panicln(args...)
+		l.WithFields(runtimeFields(2)).Panicln(args...)
 	} else {
-		qlogger.Logger().Panicln(args...)
+		l.Panicln(args...)
 	}
 }
 
 // Fatalln logs a message at level Fatal on the standard logger.
 func Fatalln(args ...interface{}) {
+	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
 	if qlogger.withRuntimeFields {
-		qlogger.Logger().WithFields(runtimeFields(2)).Fatalln(args...)
+		l.WithFields(runtimeFields(2)).Fatalln(args...)
 	} else {
-		qlogger.Logger().Fatalln(args...)
+		l.Fatalln(args...)
 	}
 }
 
@@ -440,11 +494,5 @@ func Logger() *logrus.Logger {
 }
 
 func Flush() {
-	if qlogger.logger == nil {
-		return
-	}
-
-	if file, isOk := qlogger.logger.Out.(*os.File); isOk {
-		file.Close()
-	}
+	qlogger.Flush()
 }
