@@ -92,6 +92,8 @@ func (l *QLogger) prepare() (err error) {
 	l.withRuntimeFields = true
 	timestampFormat := ""
 	disableTimeStamp := false
+	forceColors := false
+	disableColors := false
 
 	options := strings.Split(strings.ToLower(l.logoptions), ",")
 
@@ -108,6 +110,10 @@ func (l *QLogger) prepare() (err error) {
 			disableTimeStamp = true
 		case "disableruntime":
 			l.withRuntimeFields = false
+		case "forcecolors":
+			forceColors = true
+		case "disablecolors":
+			disableColors = true
 		default:
 			return fmt.Errorf("not a valid logoption:%s", opt)
 		}
@@ -132,16 +138,16 @@ func (l *QLogger) prepare() (err error) {
 			FullTimestamp:    true,
 			TimestampFormat:  timestampFormat,
 			DisableTimestamp: disableTimeStamp,
+			ForceColors:      forceColors,
+			DisableColors:    disableColors,
 		}
 	}
 
 	var out io.Writer
 
 	if len(l.logdir) == 0 {
-		if _formatter, ok := formatter.(*logrus.TextFormatter); ok {
-			_formatter.ForceColors = true
-		}
 		out = colorable.NewColorableStdout()
+		//out = os.Stdout
 	} else {
 		file, _, err := create(time.Now())
 		if err != nil {
@@ -150,7 +156,6 @@ func (l *QLogger) prepare() (err error) {
 		out = file
 	}
 	l.logger = &logrus.Logger{
-		//Out: os.Stderr,
 		Out:       out,
 		Formatter: formatter,
 		Hooks:     make(logrus.LevelHooks),
@@ -480,7 +485,7 @@ func Fatalln(args ...interface{}) {
 func init() {
 	flag.StringVar(&qlogger.logfmt, "logfmt", "kv", "logfmt:kv,json,classic")
 	flag.StringVar(&qlogger.loglevel, "loglevel", "info", "log level:debug,info,waring,fatal,panic")
-	flag.StringVar(&qlogger.logoptions, "logoptions", "longtime", "log options, longtime|shorttime|notime, disableruntime")
+	flag.StringVar(&qlogger.logoptions, "logoptions", "longtime", "log options, longtime|shorttime|notime, disableruntime,forcecolors,disablecolors")
 	flag.StringVar(&qlogger.logdir, "logdir", "", "log dir, leave empty to log to stderr")
 	flag.StringVar(&qlogger.logstash, "logstash", "", "logstash address, also log to logstash, example: udp://192.168.0.92:5000")
 	flag.StringVar(&qlogger.logstashtype, "logstashtype", program, "logstash type field, only available when logstash mode")
