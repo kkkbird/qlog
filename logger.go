@@ -1,28 +1,16 @@
 package qlog
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
-	"io"
-	"net"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 
 	"fmt"
-	"net/url"
 
-	"time"
-
-	"github.com/kkkbird/logrus-logstash-hook"
-	colorable "github.com/mattn/go-colorable"
 	"github.com/sirupsen/logrus"
-)
-
-var (
-	// qlogger is the name of the standard logger in qloggerlib `log`
-	qlogger QLogger
 )
 
 const (
@@ -30,474 +18,174 @@ const (
 	shortTimeStamp = "06/01/02 15:04:05.000"
 )
 
-type QLogger struct {
-	logger            *logrus.Logger
-	loglevel          string
-	logfmt            string
-	logdir            string
-	logstash          string
-	logstashtype      string
-	logoptions        string
-	withRuntimeFields bool
-	initOnce          sync.Once
-	initMutex         sync.Mutex
-	flushed           bool
+type LogHookConfig struct {
+	Type       string `json:"type"`
+	Level      string `json:"level,omitempty"`
+	Fmt        string `json:"fmt,omitempty"`
+	Options    bool   `json:"options,omitempty"`
+	Param      string `json:"param,omitempty"`
+	ExtraParam string `json:"extra_param,omitempty"`
 }
 
-func (l *QLogger) Logger() *logrus.Logger {
-	l.initOnce.Do(func() {
-		err := l.prepare()
+var (
+	fLogLevel         string
+	fLogFmt           string
+	fLogOutput        string
+	fLogHookConfigs   string
+	fLogOptions       string
+	fLogRuntime       bool           //from fLogOptions
+	fTimestampFormat  string         //from fLogOptions
+	fDisableTimeStamp bool           //from fLogOptions
+	fForceColors      bool           //from fLogOptions
+	fDisableColors    bool           //from fLogOptions
+	_logger           *logrus.Logger // do not call _logger directed, call Logger to prepare
+	initOnce          sync.Once
+	initMutex         sync.Mutex
+	gFlushed          bool
+)
+
+func logger() *logrus.Logger {
+	initOnce.Do(func() {
+		err := prepare()
 		if err != nil {
 			panic(err)
 		}
-
-		l.logger.SetNoLock()
+		_logger.SetNoLock()
 	})
-	return l.logger
+	return _logger
 }
 
-func (l *QLogger) Flush() {
-	l.initMutex.Lock()
-	defer l.initMutex.Unlock()
+func flush() {
+	initMutex.Lock()
+	defer initMutex.Unlock()
 
-	l.flushed = true
+	gFlushed = true
 
-	if l.logger == nil {
+	if _logger == nil {
 		return
 	}
 
-	if file, isOk := l.logger.Out.(*os.File); isOk {
+	//TODO, close hook if file
+	if file, isOk := _logger.Out.(*os.File); isOk {
 		file.Close()
 	}
 }
 
-func (l *QLogger) prepare() (err error) {
-	if !flag.Parsed() {
-		return fmt.Errorf("flag not Parsed, call flag.Parse() first")
-	}
+func parseOptions(options string) error {
+	opts := strings.Split(strings.ToLower(options), ",")
 
-	l.initMutex.Lock()
-	defer l.initMutex.Unlock()
-
-	if l.flushed {
-		return errors.New("already flushed ")
-	}
-
-	var loglevel logrus.Level
-
-	if loglevel, err = logrus.ParseLevel(l.loglevel); err != nil {
-		return err
-	}
-
-	l.withRuntimeFields = true
-	timestampFormat := ""
-	disableTimeStamp := false
-	forceColors := false
-	disableColors := false
-
-	options := strings.Split(strings.ToLower(l.logoptions), ",")
-
-	for _, opt := range options {
+	for _, opt := range opts {
 		if len(opt) == 0 {
 			continue
 		}
 		switch strings.ToLower(opt) {
 		case "shorttime":
-			timestampFormat = shortTimeStamp
+			fTimestampFormat = shortTimeStamp
 		case "longtime":
-			timestampFormat = longTimeStamp
+			fTimestampFormat = longTimeStamp
 		case "notime":
-			disableTimeStamp = true
-		case "disableruntime":
-			l.withRuntimeFields = false
+			fDisableTimeStamp = true
+		case "enableruntime":
+			fLogRuntime = true
 		case "forcecolors":
-			forceColors = true
+			fForceColors = true
 		case "disablecolors":
-			disableColors = true
+			fDisableColors = true
 		default:
 			return fmt.Errorf("not a valid logoption:%s", opt)
 		}
 	}
+	return nil
+}
 
-	var formatter logrus.Formatter
-	switch l.logfmt {
-	case "classic":
-		formatter = &ClassicFormatter{
-			TimestampFormat:  timestampFormat,
-			DisableTimestamp: disableTimeStamp,
-		}
-	case "json":
-		formatter = &logrus.JSONFormatter{
-			TimestampFormat:  timestampFormat,
-			DisableTimestamp: disableTimeStamp,
-		}
-	case "kv":
-		fallthrough
-	default:
-		formatter = &logrus.TextFormatter{
-			FullTimestamp:    true,
-			TimestampFormat:  timestampFormat,
-			DisableTimestamp: disableTimeStamp,
-			ForceColors:      forceColors,
-			DisableColors:    disableColors,
-		}
+func prepare() (err error) {
+	if !flag.Parsed() {
+		return fmt.Errorf("flag not Parsed, call flag.Parse() first")
 	}
 
-	var out io.Writer
+	initMutex.Lock()
+	defer initMutex.Unlock()
 
-	if len(l.logdir) == 0 {
-		out = colorable.NewColorableStdout()
-		//out = os.Stdout
-	} else {
-		file, _, err := create(time.Now())
-		if err != nil {
-			return err
-		}
-		out = file
+	if gFlushed {
+		return errors.New("already flushed ")
 	}
-	l.logger = &logrus.Logger{
-		Out:       out,
-		Formatter: formatter,
+	var lvl logrus.Level
+
+	if lvl, err = logrus.ParseLevel(fLogLevel); err != nil {
+		return err
+	}
+
+	if err = parseOptions(fLogOptions); err != nil {
+		return err
+	}
+
+	_logger = &logrus.Logger{
+		Out:       createQLogStdWriter(fLogOutput),
+		Formatter: createQLogFormatter(fLogFmt),
 		Hooks:     make(logrus.LevelHooks),
-		Level:     loglevel,
+		Level:     lvl,
 	}
 
-	if len(l.logstash) > 0 {
-		logstashUrl, err := url.Parse(l.logstash)
+	//init hooks
+	if len(fLogHookConfigs) > 0 {
+		var configs []LogHookConfig
+		err = json.Unmarshal([]byte(fLogHookConfigs), &configs)
 		if err != nil {
 			return err
 		}
 
-		conn, err := net.Dial(logstashUrl.Scheme, logstashUrl.Host)
-
-		if err != nil {
-			return err
+		var hook logrus.Hook
+		for _, cnf := range configs {
+			switch strings.ToLower(cnf.Type) {
+			case "stderr":
+				fallthrough
+			case "stdout":
+				hook, err = NewStdoutHook(cnf, _logger.Formatter, lvl)
+			case "file":
+				hook, err = NewFileHook(cnf, lvl)
+			case "logstash":
+				hook, err = NewLogstashHook(cnf, lvl)
+			default:
+				err = fmt.Errorf("Unknown hook type:%s", cnf.Type)
+			}
+			if err != nil {
+				return err
+			}
+			_logger.Hooks.Add(hook)
 		}
-
-		hook := logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{
-			"type": l.logstashtype,
-		}))
-
-		if err != nil {
-			return err
-		}
-
-		l.logger.Hooks.Add(hook)
 	}
 
 	return nil
 }
 
-func runtimeFields(skip int) logrus.Fields {
-	_, file, line, ok := runtime.Caller(skip)
-	if !ok {
-		file = "???"
-		line = 1
-	} else {
-		slash := strings.LastIndex(file, "/")
-		if slash >= 0 {
-			file = file[slash+1:]
-		}
-	}
-	return logrus.Fields{
-		"FILE": file,
-		"LINE": line,
-	}
-}
-
-// WithError creates an entry from the standard logger and adds an error to it, using the value defined in ErrorKey as key.
-func WithError(err error) *Entry {
-	e := qlogger.Logger().WithError(err) //call Logger() first to make sure prepare could be called first
-	return &Entry{
-		e:                 e,
-		withRunTimeFields: qlogger.withRuntimeFields,
-	}
-}
-
-// WithField creates an entry from the standard logger and adds a field to
-// it. If you want multiple fields, use `WithFields`.
-//
-// Note that it doesn't log until you call Debug, Print, Info, Warn, Fatal
-// or Panic on the Entry it returns.
-func WithField(key string, value interface{}) *Entry {
-	e := qlogger.Logger().WithField(key, value) //call Logger() first to make sure prepare could be called first
-	return &Entry{
-		e:                 e,
-		withRunTimeFields: qlogger.withRuntimeFields,
-	}
-}
-
-// WithFields creates an entry from the standard logger and adds multiple
-// fields to it. This is simply a helper for `WithField`, invoking it
-// once for each field.
-//
-// Note that it doesn't log until you call Debug, Print, Info, Warn, Fatal
-// or Panic on the Entry it returns.
-func WithFields(fields logrus.Fields) *Entry {
-	e := qlogger.Logger().WithFields(fields) //call Logger() first to make sure prepare could be called first
-	return &Entry{
-		e:                 e,
-		withRunTimeFields: qlogger.withRuntimeFields,
-	}
-}
-
-// Debug logs a message at level Debug on the standard logger.
-func Debug(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Debug(args...)
-	} else {
-		l.Debug(args...)
-	}
-}
-
-// Print logs a message at level Info on the standard logger.
-func Print(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Info(args...)
-	} else {
-		l.Info(args...)
-	}
-}
-
-// Info logs a message at level Info on the standard logger.
-func Info(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Info(args...)
-	} else {
-		l.Info(args...)
-	}
-}
-
-// Warn logs a message at level Warn on the standard logger.
-func Warn(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Warn(args...)
-	} else {
-		l.Warn(args...)
-	}
-}
-
-// Warning logs a message at level Warn on the standard logger.
-func Warning(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Warn(args...)
-	} else {
-		l.Warn(args...)
-	}
-}
-
-// Error logs a message at level Error on the standard logger.
-func Error(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Error(args...)
-	} else {
-		l.Error(args...)
-	}
-}
-
-// Panic logs a message at level Panic on the standard logger.
-func Panic(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Panic(args...)
-	} else {
-		l.Panic(args...)
-	}
-}
-
-// Fatal logs a message at level Fatal on the standard logger.
-func Fatal(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Fatal(args...)
-	} else {
-		l.Fatal(args...)
-	}
-}
-
-// Debugf logs a message at level Debug on the standard logger.
-func Debugf(format string, args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Debugf(format, args...)
-	} else {
-		l.Debugf(format, args...)
-	}
-}
-
-// Printf logs a message at level Info on the standard logger.
-func Printf(format string, args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Infof(format, args...)
-	} else {
-		l.Infof(format, args...)
-	}
-}
-
-// Infof logs a message at level Info on the standard logger.
-func Infof(format string, args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Infof(format, args...)
-	} else {
-		l.Infof(format, args...)
-	}
-}
-
-// Warnf logs a message at level Warn on the standard logger.
-func Warnf(format string, args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Warnf(format, args...)
-	} else {
-		l.Warnf(format, args...)
-	}
-}
-
-// Warningf logs a message at level Warn on the standard logger.
-func Warningf(format string, args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Warnf(format, args...)
-	} else {
-		l.Warnf(format, args...)
-	}
-}
-
-// Errorf logs a message at level Error on the standard logger.
-func Errorf(format string, args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Errorf(format, args...)
-	} else {
-		l.Errorf(format, args...)
-	}
-}
-
-// Panicf logs a message at level Panic on the standard logger.
-func Panicf(format string, args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Panicf(format, args...)
-	} else {
-		l.Panicf(format, args...)
-	}
-}
-
-// Fatalf logs a message at level Fatal on the standard logger.
-func Fatalf(format string, args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Fatalf(format, args...)
-	} else {
-		l.Fatalf(format, args...)
-	}
-}
-
-// Debugln logs a message at level Debug on the standard logger.
-func Debugln(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Debugln(args...)
-	} else {
-		l.Debugln(args...)
-	}
-}
-
-// Println logs a message at level Info on the standard logger.
-func Println(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Infoln(args...)
-	} else {
-		l.Infoln(args...)
-	}
-}
-
-// Infoln logs a message at level Info on the standard logger.
-func Infoln(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Infoln(args...)
-	} else {
-		l.Infoln(args...)
-	}
-}
-
-// Warnln logs a message at level Warn on the standard logger.
-func Warnln(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Warnln(args...)
-	} else {
-		l.Warnln(args...)
-	}
-}
-
-// Warningln logs a message at level Warn on the standard logger.
-func Warningln(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Warnln(args...)
-	} else {
-		l.Warnln(args...)
-	}
-}
-
-// Errorln logs a message at level Error on the standard logger.
-func Errorln(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Errorln(args...)
-	} else {
-		l.Errorln(args...)
-	}
-}
-
-// Panicln logs a message at level Panic on the standard logger.
-func Panicln(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Panicln(args...)
-	} else {
-		l.Panicln(args...)
-	}
-}
-
-// Fatalln logs a message at level Fatal on the standard logger.
-func Fatalln(args ...interface{}) {
-	l := qlogger.Logger() //call Logger() first to make sure prepare could be called first
-	if qlogger.withRuntimeFields {
-		l.WithFields(runtimeFields(2)).Fatalln(args...)
-	} else {
-		l.Fatalln(args...)
-	}
-}
+const (
+	logHookHelper = `in JSON format: 
+		type: logstash|file|stdout|stderr
+		level: same as root debug level if omitted, and must above root debug level
+	example:
+		'[{"type":"logstash", "level":"debug", "param":"udp://<logstash-ip>:<port>","extra_param":"<logstash type>"},
+		{"type":"file", "level":"debug", "fmt":"<log format>", "param":"<logdir,should be OS temp dir if not specifed>"},
+		{"type":"stdout", "level":"debug"},
+		{"type":"stderr", "level":"debug"}]'`
+)
 
 func init() {
-	flag.StringVar(&qlogger.logfmt, "logfmt", "kv", "logfmt:kv,json,classic")
-	flag.StringVar(&qlogger.loglevel, "loglevel", "info", "log level:debug,info,waring,fatal,panic")
-	flag.StringVar(&qlogger.logoptions, "logoptions", "longtime", "log options, longtime|shorttime|notime, disableruntime,forcecolors,disablecolors")
-	flag.StringVar(&qlogger.logdir, "logdir", "", "log dir, leave empty to log to stderr")
-	flag.StringVar(&qlogger.logstash, "logstash", "", "logstash address, also log to logstash, example: udp://192.168.0.92:5000")
-	flag.StringVar(&qlogger.logstashtype, "logstashtype", program, "logstash type field, only available when logstash mode")
-
-	//flag.BoolVar(&qlogger.withRuntimeFields, "logruntime", true, "log with runtime fields")
+	flag.StringVar(&fLogFmt, "logfmt", "kv", "kv,json,classic")
+	flag.StringVar(&fLogLevel, "loglevel", "info", "debug,info,waring,fatal,panic")
+	flag.StringVar(&fLogOptions, "logoptions", "longtime,enableruntime", "string seperated by comma, longtime|shorttime|notime,enableruntime,forcecolors,disablecolors")
+	flag.StringVar(&fLogOutput, "logoutput", "stdout", "stdout, stderr, discard")
+	flag.StringVar(&fLogHookConfigs, "loghooks", "", logHookHelper)
 }
 
 //get logrus logger
-func Logger() *logrus.Logger {
-	return qlogger.Logger()
-}
+// func Logger() *logrus.Logger {
+// 	return logger()
+// }
 
 func Flush() {
-	qlogger.Flush()
+	flush()
+}
+
+func InitQLog() {
+	_ = logger()
 }
