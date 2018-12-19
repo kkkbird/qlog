@@ -2,16 +2,14 @@ package main
 
 import (
 	"errors"
-	"flag"
 
-	log "github.com/kkkbird/qlog"
+	"github.com/kkkbird/qlog"
 	"github.com/sirupsen/logrus"
 )
 
-func main() {
-	flag.Parse()
-	defer log.Flush()
+var log = qlog.DefaultLogger
 
+func main() {
 	// fields := make(logrus.Fields)
 	// flag.VisitAll(func(f *flag.Flag) {
 	// 	fields[f.Name] = f.Value
