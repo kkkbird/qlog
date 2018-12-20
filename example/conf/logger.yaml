@@ -4,7 +4,7 @@ logger:
   formatter: 
     name: text
     opts:
-      forcecolors: true
+      forcecolors: false
       disablecolor: false
       disabletimestamp: true
       fulltimestamp: true
@@ -17,8 +17,10 @@ logger:
   stdout:
     enabled: true
     level: warn
+
+  file:
+    enabled: true
+    filedir: .\log
+    level: trace
     formatter:
       name: classic
-      opts:
-        disabletimestamp: false
-        TruncateCallerPath: true

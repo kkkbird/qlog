@@ -1,75 +1,101 @@
 package qlog
 
-// from glog
-
 import (
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
-type FileHook struct {
-	writer    io.Writer
-	formatter logrus.Formatter
-	logLevels []logrus.Level
-}
-
-func (h *FileHook) Fire(e *logrus.Entry) error {
-	dataBytes, err := h.formatter.Format(e)
-	if err != nil {
-		return err
-	}
-	_, err = h.writer.Write(dataBytes)
-
-	return err
-}
-
-// Levels returns all logrus levels.
-func (h *FileHook) Levels() []logrus.Level {
-	return h.logLevels
-}
-
-// MaxSize is the maximum size of a log file in bytes.
-var MaxSize uint64 = 1024 * 1024 * 1800
+var (
+	ErrNoLogDir = errors.New("no log dir exists")
+)
 
 // logName returns a new log file name containing tag, with start time t, and
 // the name for the symlink for tag.
 func logName(t time.Time) (name, link string) {
-	name = fmt.Sprintf("%s.%04d%02d%02d-%02d%02d%02d.%s.%s.%d.log",
-		program,
+	name = fmt.Sprintf("%s.%04d%02d%02d-%02d%02d%02d.%s.%s.PID%d.log",
+		gProgram,
 		t.Year(),
 		t.Month(),
 		t.Day(),
 		t.Hour(),
 		t.Minute(),
 		t.Second(),
-		host,
-		userName,
-		pid,
+		gHost,
+		gUserName,
+		gPid,
 	)
-	return name, fmt.Sprintf("%s.log", program)
+	return name, fmt.Sprintf("%s.log", gProgram)
+}
+
+type FileHook struct {
+	BaseHook
+
+	FileDir    string
+	Filename   string
+	fileWriter *os.File
+
+	// Rotate at line
+	MaxLines         int
+	maxLinesCurLines int
+
+	// Rotate at size
+	MaxSize        int
+	maxSizeCurSize int
+
+	// Rotate daily
+	Daily         bool
+	MaxDays       int64
+	dailyOpenDate int
+	dailyOpenTime time.Time
+
+	Rotate bool
+
+	Perm       string
+	RotatePerm string
+}
+
+// MaxSize is the maximum size of a log file in bytes.
+var MaxSize uint64 = 1024 * 1024 * 1800
+
+func (h *FileHook) Setup() error {
+	var err error
+
+	if err = v.UnmarshalKey("logger.file", h); err != nil {
+		return err
+	}
+
+	h.baseSetup()
+
+	var f io.Writer
+	if f, _, err = h.create(time.Now()); err != nil {
+		return err
+	}
+
+	h.writer = f
+
+	return nil
 }
 
 // create creates a new log file and returns the file and its filename, which
 // contains tag ("INFO", "FATAL", etc.) and t.  If the file is created
 // successfully, create also attempts to update the symlink for that tag, ignoring
 // errors.
-func create(cnf LogHookConfig, t time.Time) (f *os.File, filename string, err error) {
+func (h *FileHook) create(t time.Time) (f *os.File, filename string, err error) {
 	// logDirs lists the candidate directories for new log files.
 	var logDirs []string
 
-	if len(cnf.Param) > 0 {
-		logDirs = append(logDirs, cnf.Param)
+	if len(h.FileDir) > 0 {
+		logDirs = append(logDirs, h.FileDir)
 	}
-	logDirs = append(logDirs, os.TempDir())
+	//logDirs = append(logDirs, os.TempDir())
 
 	if len(logDirs) == 0 {
-		return nil, "", errors.New("log: no log dirs")
+		return nil, "", ErrNoLogDir
 	}
 
 	name, link := logName(t)
@@ -85,26 +111,9 @@ func create(cnf LogHookConfig, t time.Time) (f *os.File, filename string, err er
 		}
 		lastErr = err
 	}
-	return nil, "", fmt.Errorf("log: cannot create log: %v", lastErr)
+	return nil, "", fmt.Errorf("cannot create log: %v", lastErr)
 }
 
-func NewFileHook(cnf LogHookConfig, rootLevel logrus.Level) (logrus.Hook, error) {
-	file, _, err := create(cnf, time.Now())
-	if err != nil {
-		return nil, err
-	}
-
-	hookLevel := rootLevel
-	if len(cnf.Level) > 0 {
-		hookLevel, err = logrus.ParseLevel(cnf.Level)
-		if err != nil {
-			return nil, fmt.Errorf("LogHook %s: log level [%s] cannot be parsed", cnf.Type, cnf.Level)
-		}
-	}
-
-	return &FileHook{
-		writer:    file,
-		formatter: createQLogFormatter(cnf.Fmt),
-		logLevels: logLevels(hookLevel),
-	}, nil
+func init() {
+	registerHook("file", reflect.TypeOf(FileHook{}))
 }
