@@ -9,16 +9,16 @@ type StdoutHook struct {
 	BaseHook
 }
 
-func (s *StdoutHook) Setup() error {
+func (h *StdoutHook) Setup() error {
 	var err error
 
-	if err = v.UnmarshalKey("logger.stdout", s); err != nil {
+	if err = v.UnmarshalKey("logger.stdout", h); err != nil {
 		return err
 	}
 
-	s.baseSetup()
+	h.baseSetup()
 
-	s.writer = os.Stdout
+	h.writer = os.Stdout
 
 	return nil
 }

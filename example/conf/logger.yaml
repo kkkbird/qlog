@@ -1,16 +1,24 @@
 logger:
   level: debug
+  reportcaller: true
   formatter: 
     name: text
     opts:
-      ForceColors: false
-      disable-color: false
-      disable-timestamp: false
-      full-timestamp: false
-      timestamp-format: "2006-01-02 15:04:05"       
+      forcecolors: true
+      disablecolor: false
+      disabletimestamp: true
+      fulltimestamp: true
+      timestampformat: "2006-01-02 15:04:05"
+
   stderr:
-    enabled: true
+    enabled: false
     level: error
+
   stdout:
     enabled: true
-    level: debug
+    level: warn
+    formatter:
+      name: classic
+      opts:
+        disabletimestamp: false
+        TruncateCallerPath: true

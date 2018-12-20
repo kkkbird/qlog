@@ -9,16 +9,16 @@ type StderrHook struct {
 	BaseHook
 }
 
-func (s *StderrHook) Setup() error {
+func (h *StderrHook) Setup() error {
 	var err error
 
-	if err = v.UnmarshalKey("logger.stderr", s); err != nil {
+	if err = v.UnmarshalKey("logger.stderr", h); err != nil {
 		return err
 	}
 
-	s.baseSetup()
+	h.baseSetup()
 
-	s.writer = os.Stderr
+	h.writer = os.Stderr
 
 	return nil
 }
