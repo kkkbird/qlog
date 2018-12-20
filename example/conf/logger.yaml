@@ -11,12 +11,14 @@ logger:
       timestampformat: "2006-01-02 15:04:05"
 
   stderr:
-    enabled: false
+    enabled: true
     level: error
+    formatter:
+      name: json
 
   stdout:
     enabled: true
-    level: warn
+    level: info
 
   file:
     enabled: true
