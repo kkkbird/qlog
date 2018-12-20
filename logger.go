@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
+	"path/filepath"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -23,9 +26,46 @@ func logLevels(baseLevel logrus.Level) (level []logrus.Level) {
 	return
 }
 
-var DefaultLogger *Logger
-var gDefaultLogLevel logrus.Level
-var gReportCaller bool
+var (
+	// default logger object
+	DefaultLogger *Logger
+
+	// default logger settings
+	gDefaultLogLevel logrus.Level
+	gReportCaller    bool
+
+	// system param
+	gPid      = os.Getpid()
+	gProgram  = filepath.Base(os.Args[0])
+	gHost     = "unknownhost"
+	gUserName = "unknownuser"
+)
+
+// shortHostname returns its argument, truncating at the first period.
+// For instance, given "www.google.com" it returns "www".
+func shortHostname(hostname string) string {
+	if i := strings.Index(hostname, "."); i >= 0 {
+		return hostname[:i]
+	}
+	return hostname
+}
+
+func initSysParams() error {
+	h, err := os.Hostname()
+	if err == nil {
+		gHost = shortHostname(h)
+	}
+
+	current, err := user.Current()
+	if err == nil {
+		gUserName = current.Username
+	}
+
+	// Sanitize userName since it may contain filepath separators on Windows.
+	gUserName = strings.Replace(gUserName, `\`, "_", -1)
+
+	return nil
+}
 
 func initViper() error {
 	v = viper.New()
@@ -47,6 +87,11 @@ func initViper() error {
 
 func init() {
 	var err error
+
+	if err = initSysParams(); err != nil {
+		panic(fmt.Sprint("[qlog] init system param error:", err))
+	}
+
 	if err = initViper(); err != nil {
 		panic(fmt.Sprint("[qlog] init viper error:", err))
 	}
