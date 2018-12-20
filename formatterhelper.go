@@ -8,6 +8,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	longTimeStamp  = "2006/01/02 15:04:05.000000Z07:00"
+	shortTimeStamp = "06/01/02 15:04:05.000"
+)
+
 var (
 	gRegisteredFormatters map[string]reflect.Type = make(map[string]reflect.Type)
 )

@@ -41,8 +41,8 @@ func (h *BaseHook) baseSetup() {
 	// setup levels
 	var level = gDefaultLogLevel
 	var err error
-	if hookLevel := v.GetString(strings.Join([]string{"logger", h.Name, "level"}, ",")); hookLevel != "" {
-		if level, err = logrus.ParseLevel(hookLevel); err != nil {
+	if h.Level = v.GetString(strings.Join([]string{"logger", h.Name, "level"}, ".")); h.Level != "" {
+		if level, err = logrus.ParseLevel(h.Level); err != nil {
 			fmt.Printf("[qlog] setup hook(%s), parse level fail:%s\n", h.Name, err)
 			level = gDefaultLogLevel
 		}
@@ -51,8 +51,8 @@ func (h *BaseHook) baseSetup() {
 	h.logLevels = logLevels(level)
 
 	// setup formatters
-	if hookFormatterName := v.GetString(strings.Join([]string{"logger", h.Name, "formatter", "name"}, ",")); hookFormatterName != "" {
-		if h.formatter, err = newFormatter(hookFormatterName, strings.Join([]string{"logger", h.Name, "formatter", "opts"}, ",")); err != nil {
+	if hookFormatterName := v.GetString(strings.Join([]string{"logger", h.Name, "formatter", "name"}, ".")); hookFormatterName != "" {
+		if h.formatter, err = newFormatter(hookFormatterName, strings.Join([]string{"logger", h.Name, "formatter", "opts"}, ".")); err != nil {
 			fmt.Printf("[qlog] setup hook(%s) formatter(%s) fail:%s\n", h.Name, hookFormatterName, err)
 			h.formatter = gDefaultFormatter
 		}
@@ -78,11 +78,8 @@ func newHook(name string) (logrus.Hook, error) {
 
 	h := reflect.New(typ)
 
-	if err = v.UnmarshalKey(strings.Join([]string{"log", name}, "."), h.Interface()); err != nil {
-		return nil, err
-	}
-
 	h.Elem().FieldByName("Name").SetString(name)
+	h.Elem().FieldByName("Enabled").SetBool(true)
 
 	hook := h.Interface().(logrus.Hook)
 
@@ -90,6 +87,8 @@ func newHook(name string) (logrus.Hook, error) {
 		if err = setup.Setup(); err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, fmt.Errorf("[qlog] hook(%s) has no Setup() func", name)
 	}
 
 	return hook, nil
@@ -97,11 +96,15 @@ func newHook(name string) (logrus.Hook, error) {
 
 var gActivedHooks = make(logrus.LevelHooks)
 
+func hasActivedHook() bool {
+	return true
+}
+
 func initHooks() error {
 	var err error
 	var hook logrus.Hook
 	for name := range gRegisteredHooks {
-		if v.GetBool(strings.Join([]string{"log", name, "enabled"}, ".")) == true {
+		if v.GetBool(strings.Join([]string{"logger", name, "enabled"}, ".")) == true {
 			if hook, err = newHook(name); err != nil {
 				fmt.Printf("[qlog] init hook(%s) error:%s\n", name, err)
 				continue

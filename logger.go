@@ -24,8 +24,8 @@ func logLevels(baseLevel logrus.Level) (level []logrus.Level) {
 }
 
 var DefaultLogger *Logger
-
 var gDefaultLogLevel logrus.Level
+var gReportCaller bool
 
 func initViper() error {
 	v = viper.New()
@@ -36,6 +36,7 @@ func initViper() error {
 	v.SetConfigType("yaml")
 
 	v.SetDefault("logger.level", "debug")
+	v.SetDefault("logger.reportcaller", false)
 
 	if err := v.ReadInConfig(); err != nil {
 		return err
@@ -54,6 +55,8 @@ func init() {
 		panic(fmt.Sprint("[qlog] get default log level error:", err))
 	}
 
+	gReportCaller = v.GetBool("logger.reportcaller")
+
 	if err = initFormatters(); err != nil {
 		panic(fmt.Sprint("[qlog] init default formatter:", err))
 	}
@@ -70,7 +73,7 @@ func init() {
 				Hooks:        gActivedHooks,
 				Level:        gDefaultLogLevel,
 				ExitFunc:     os.Exit,
-				ReportCaller: true,
+				ReportCaller: gReportCaller,
 			},
 		}
 	} else {
@@ -81,7 +84,7 @@ func init() {
 				Hooks:        nil,
 				Level:        gDefaultLogLevel,
 				ExitFunc:     os.Exit,
-				ReportCaller: false,
+				ReportCaller: gReportCaller,
 			},
 		}
 	}
