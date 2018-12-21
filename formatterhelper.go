@@ -1,7 +1,6 @@
 package qlog
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -14,7 +13,7 @@ const (
 )
 
 var (
-	gRegisteredFormatters map[string]reflect.Type = make(map[string]reflect.Type)
+	gRegisteredFormatters = make(map[string]reflect.Type)
 )
 
 func registeFormatter(name string, typ reflect.Type) {
@@ -27,7 +26,7 @@ func newFormatter(name string, key string) (logrus.Formatter, error) {
 	var ok bool
 
 	if typ, ok = gRegisteredFormatters[name]; !ok {
-		return nil, errors.New(fmt.Sprintf("[qlog] formatter name(%s) not registered", name))
+		return nil, fmt.Errorf("[qlog] formatter name(%s) not registered", name)
 	}
 
 	f := reflect.New(typ)

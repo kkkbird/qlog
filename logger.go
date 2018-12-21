@@ -27,7 +27,7 @@ func logLevels(baseLevel logrus.Level) (level []logrus.Level) {
 }
 
 var (
-	// default logger object
+	// DefaultLogger : default logger object
 	DefaultLogger *Logger
 
 	// default logger settings
@@ -74,6 +74,9 @@ func initViper() error {
 	v.AddConfigPath("./conf/")
 	v.SetConfigName("logger")
 	v.SetConfigType("yaml")
+
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	v.SetDefault("logger.level", "debug")
 	v.SetDefault("logger.reportcaller", false)
