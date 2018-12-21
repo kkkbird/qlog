@@ -54,3 +54,7 @@ func initFormatters() error {
 
 	return nil
 }
+
+func resetFormatters() {
+	gDefaultFormatter = nil
+}

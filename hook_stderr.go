@@ -24,5 +24,5 @@ func (h *StderrHook) Setup() error {
 }
 
 func init() {
-	registerHook("stderr", reflect.TypeOf(StdoutHook{}))
+	registerHook("stderr", reflect.TypeOf(StderrHook{}))
 }

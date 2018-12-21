@@ -24,6 +24,7 @@ type BaseHook struct {
 }
 
 func (h *BaseHook) Fire(e *logrus.Entry) error {
+	// fmt.Println("fire:", h.Name)
 	dataBytes, err := h.formatter.Format(e)
 	if err != nil {
 		return err
@@ -105,7 +106,9 @@ func initHooks() error {
 	var hook logrus.Hook
 
 	for name := range gRegisteredHooks {
-		if v.GetBool(strings.Join([]string{"logger", name, "enabled"}, ".")) == true {
+		n := strings.Join([]string{"logger", name, "enabled"}, ".")
+		//fmt.Println("initHooks", n, v.GetBool(n))
+		if v.GetBool(n) == true {
 			if hook, err = newHook(name); err != nil {
 				fmt.Printf("[qlog] init hook(%s) error:%s\n", name, err)
 				continue
@@ -115,4 +118,8 @@ func initHooks() error {
 	}
 
 	return nil
+}
+
+func resetHooks() {
+	gActivedHooks = make(logrus.LevelHooks)
 }

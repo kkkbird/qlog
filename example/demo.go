@@ -1,25 +1,15 @@
 package main
 
 import (
+	"context"
 	"errors"
+	"time"
 
-	"github.com/kkkbird/qlog"
+	log "github.com/kkkbird/qlog"
 	"github.com/sirupsen/logrus"
 )
 
-var log = qlog.DefaultLogger
-
 func main() {
-	// fields := make(logrus.Fields)
-	// flag.VisitAll(func(f *flag.Flag) {
-	// 	fields[f.Name] = f.Value
-	// })
-
-	// if formater, isOk := log.Logger().Formatter.(*logrus.TextFormatter); isOk {
-	// 	formater.ForceColors = true
-	// }
-	// log.WithFields(fields).Infoln("Flags")
-
 	log.Debug("This is a DEBUG message")
 	log.Info("This is a INFO message")
 	log.Warn("This is a WARN message")
@@ -37,4 +27,16 @@ func main() {
 	entry.Debug("This is a DEBUG message from entry")
 	entry.Info("This is a INFO message from entry")
 
+	// try to change the config now
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	go func() {
+		for i := 0; i < 100; i++ {
+			log.Warn("hello ", i)
+			time.Sleep(time.Second)
+		}
+		cancel()
+	}()
+
+	<-ctx.Done()
 }

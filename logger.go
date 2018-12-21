@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -28,7 +29,7 @@ func logLevels(baseLevel logrus.Level) (level []logrus.Level) {
 
 var (
 	// DefaultLogger : default logger object
-	DefaultLogger *Logger
+	gDefaultLogger *Logger
 
 	// default logger settings
 	gDefaultLogLevel logrus.Level
@@ -85,6 +86,63 @@ func initViper() error {
 		return err
 	}
 
+	v.WatchConfig()
+	v.OnConfigChange(func(e fsnotify.Event) {
+		//fmt.Println("config changed")
+		resetFormatters()
+		resetHooks()
+		if err := initLogger(); err != nil {
+
+			gDefaultLogger = &Logger{
+				Logger: logrus.StandardLogger(),
+			}
+
+			fmt.Println("[qlog] reload config fail:", err)
+		}
+	})
+
+	return nil
+}
+
+func initLogger() error {
+	var err error
+	if gDefaultLogLevel, err = logrus.ParseLevel(v.GetString("logger.level")); err != nil {
+		return fmt.Errorf("get default log level error: %s", err)
+	}
+
+	gReportCaller = v.GetBool("logger.reportcaller")
+
+	if err = initFormatters(); err != nil {
+		return fmt.Errorf("init formatters error: %s", err)
+	}
+
+	if err = initHooks(); err != nil {
+		return fmt.Errorf("init hooks error: %s", err)
+	}
+
+	if len(gActivedHooks) > 0 {
+		gDefaultLogger = &Logger{
+			Logger: &logrus.Logger{
+				Out:          ioutil.Discard,
+				Formatter:    gDefaultFormatter,
+				Hooks:        gActivedHooks,
+				Level:        gDefaultLogLevel,
+				ExitFunc:     os.Exit,
+				ReportCaller: gReportCaller,
+			},
+		}
+	} else {
+		gDefaultLogger = &Logger{
+			Logger: &logrus.Logger{
+				Out:          os.Stderr,
+				Formatter:    gDefaultFormatter,
+				Hooks:        nil,
+				Level:        gDefaultLogLevel,
+				ExitFunc:     os.Exit,
+				ReportCaller: gReportCaller,
+			},
+		}
+	}
 	return nil
 }
 
@@ -99,41 +157,7 @@ func init() {
 		panic(fmt.Sprint("[qlog] init viper error:", err))
 	}
 
-	if gDefaultLogLevel, err = logrus.ParseLevel(v.GetString("logger.level")); err != nil {
-		panic(fmt.Sprint("[qlog] get default log level error:", err))
-	}
-
-	gReportCaller = v.GetBool("logger.reportcaller")
-
-	if err = initFormatters(); err != nil {
-		panic(fmt.Sprint("[qlog] init default formatter:", err))
-	}
-
-	if err = initHooks(); err != nil {
-		panic(fmt.Sprint("[qlog] init default formatter:", err))
-	}
-
-	if len(gActivedHooks) > 0 {
-		DefaultLogger = &Logger{
-			Logger: &logrus.Logger{
-				Out:          ioutil.Discard,
-				Formatter:    gDefaultFormatter,
-				Hooks:        gActivedHooks,
-				Level:        gDefaultLogLevel,
-				ExitFunc:     os.Exit,
-				ReportCaller: gReportCaller,
-			},
-		}
-	} else {
-		DefaultLogger = &Logger{
-			Logger: &logrus.Logger{
-				Out:          os.Stderr,
-				Formatter:    gDefaultFormatter,
-				Hooks:        nil,
-				Level:        gDefaultLogLevel,
-				ExitFunc:     os.Exit,
-				ReportCaller: gReportCaller,
-			},
-		}
+	if err = initLogger(); err != nil {
+		panic(fmt.Sprint("[qlog] initLogger fail:", err))
 	}
 }
