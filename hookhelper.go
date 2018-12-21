@@ -61,7 +61,7 @@ func (h *BaseHook) baseSetup() {
 	}
 }
 
-var gRegisteredHooks map[string]reflect.Type = make(map[string]reflect.Type)
+var gRegisteredHooks = make(map[string]reflect.Type)
 
 func registerHook(name string, typ reflect.Type) {
 	gRegisteredHooks[name] = typ
@@ -103,6 +103,7 @@ func hasActivedHook() bool {
 func initHooks() error {
 	var err error
 	var hook logrus.Hook
+
 	for name := range gRegisteredHooks {
 		if v.GetBool(strings.Join([]string{"logger", name, "enabled"}, ".")) == true {
 			if hook, err = newHook(name); err != nil {
