@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/pflag"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -40,6 +42,9 @@ var (
 	gProgram  = filepath.Base(os.Args[0])
 	gHost     = "unknownhost"
 	gUserName = "unknownuser"
+
+	// flagset
+	gCommandLine = pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
 )
 
 // shortHostname returns its argument, truncating at the first period.
@@ -70,15 +75,23 @@ func initSysParams() error {
 
 func initViper() error {
 	v = viper.New()
+
+	// read from logger.yaml
 	v.AddConfigPath(".")
 	v.AddConfigPath("/etc/qlog")
 	v.AddConfigPath("./conf/")
 	v.SetConfigName("logger")
 	v.SetConfigType("yaml")
 
+	// read from env
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
+	// read from flags
+	gCommandLine.Parse(os.Args[1:])
+	v.BindPFlags(gCommandLine)
+
+	// set default
 	v.SetDefault("logger.level", "debug")
 	v.SetDefault("logger.reportcaller", false)
 
@@ -86,22 +99,27 @@ func initViper() error {
 		return err
 	}
 
+	// watch configs changes
 	v.WatchConfig()
 	v.OnConfigChange(func(e fsnotify.Event) {
-		//fmt.Println("config changed")
-		resetFormatters()
-		resetHooks()
-		if err := initLogger(); err != nil {
-
-			gDefaultLogger = &Logger{
-				Logger: logrus.StandardLogger(),
-			}
-
-			fmt.Println("[qlog] reload config fail:", err)
-		}
+		fmt.Println("[qlog] config changed: ", e.Name)
+		resetLogger()
 	})
 
 	return nil
+}
+
+func resetLogger() {
+	resetFormatters()
+	resetHooks()
+	if err := initLogger(); err != nil {
+
+		gDefaultLogger = &Logger{
+			Logger: logrus.StandardLogger(),
+		}
+
+		fmt.Println("[qlog] reload config fail:", err)
+	}
 }
 
 func initLogger() error {
@@ -132,6 +150,7 @@ func initLogger() error {
 			},
 		}
 	} else {
+		fmt.Println("[qlog] no activate log hook, use default logger!")
 		gDefaultLogger = &Logger{
 			Logger: &logrus.Logger{
 				Out:          os.Stderr,

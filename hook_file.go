@@ -1,17 +1,12 @@
 package qlog
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"reflect"
 	"time"
-)
-
-var (
-	ErrNoLogDir = errors.New("no log dir exists")
 )
 
 // logName returns a new log file name containing tag, with start time t, and
@@ -36,7 +31,7 @@ type FileHook struct {
 	BaseHook
 
 	FileDir    string
-	Filename   string
+	FileName   string
 	fileWriter *os.File
 
 	// Rotate at line
@@ -49,7 +44,7 @@ type FileHook struct {
 
 	// Rotate daily
 	Daily         bool
-	MaxDays       int64
+	MaxDays       int
 	dailyOpenDate int
 	dailyOpenTime time.Time
 
@@ -59,17 +54,35 @@ type FileHook struct {
 	RotatePerm string
 }
 
+const (
+	keyFileEnabled    = "logger.file.enabled"
+	keyFileLevel      = "logger.file.level"
+	keyFileDir        = "logger.file.filedir"
+	keyFileName       = "logger.file.filename"
+	keyFileMaxLines   = "logger.file.maxlines"
+	keyFileDaily      = "logger.file.daily"
+	keyFileMaxDays    = "logger.file.maxdays"
+	keyFileRotate     = "logger.file.rotate"
+	keyFilePerm       = "logger.file.perm"
+	keyFileRotatePerm = "logger.file.rotateperm"
+)
+
 // MaxSize is the maximum size of a log file in bytes.
 var MaxSize uint64 = 1024 * 1024 * 1800
 
 func (h *FileHook) Setup() error {
 	var err error
 
-	if err = v.UnmarshalKey("logger.file", h); err != nil {
-		return err
-	}
-
 	h.baseSetup()
+
+	h.FileDir = v.GetString(keyFileDir)
+	h.FileName = v.GetString(keyFileName)
+	h.MaxLines = v.GetInt(keyFileMaxLines)
+	h.Daily = v.GetBool(keyFileDaily)
+	h.MaxDays = v.GetInt(keyFileMaxDays)
+	h.Rotate = v.GetBool(keyFileRotate)
+	h.Perm = v.GetString(keyFilePerm)
+	h.RotatePerm = v.GetString(keyFileRotatePerm)
 
 	var f io.Writer
 	if f, _, err = h.create(time.Now()); err != nil {
@@ -95,7 +108,7 @@ func (h *FileHook) create(t time.Time) (f *os.File, filename string, err error) 
 	//logDirs = append(logDirs, os.TempDir())
 
 	if len(logDirs) == 0 {
-		return nil, "", ErrNoLogDir
+		return nil, "", fmt.Errorf("logDirs <%q> not exist", logDirs)
 	}
 
 	name, link := logName(t)
@@ -114,6 +127,19 @@ func (h *FileHook) create(t time.Time) (f *os.File, filename string, err error) 
 	return nil, "", fmt.Errorf("cannot create log: %v", lastErr)
 }
 
-func init() {
+var _InitFileHook = func() interface{} {
+	gCommandLine.Bool(keyFileEnabled, false, "logger.file.enabled")
+	gCommandLine.String(keyFileLevel, "debug", "logger.file.level")
+	gCommandLine.String(keyFileDir, "", "logger.file.filedir")
+	gCommandLine.String(keyFileName, "", "logger.file.filename")
+	gCommandLine.Int(keyFileMaxLines, 0, "logger.file.maxlines")
+	gCommandLine.Bool(keyFileDaily, false, "logger.file.daily")
+	gCommandLine.Int(keyFileMaxDays, 0, "logger.file.maxdays")
+	gCommandLine.Bool(keyFileRotate, false, "logger.file.rotate")
+	gCommandLine.String(keyFilePerm, "0440", "logger.file.perm")
+	gCommandLine.String(keyFileRotatePerm, "0660", "logger.file.rotateperm")
+
 	registerHook("file", reflect.TypeOf(FileHook{}))
-}
+
+	return nil
+}()

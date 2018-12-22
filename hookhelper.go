@@ -14,9 +14,8 @@ type HookSetuper interface {
 }
 
 type BaseHook struct {
-	Name    string
-	Enabled bool
-	Level   string
+	Name  string
+	Level string
 
 	formatter logrus.Formatter
 	logLevels []logrus.Level
@@ -66,6 +65,10 @@ var gRegisteredHooks = make(map[string]reflect.Type)
 
 func registerHook(name string, typ reflect.Type) {
 	gRegisteredHooks[name] = typ
+
+	if _, ok := reflect.New(typ).Interface().(HookSetuper); !ok {
+		panic(fmt.Sprintf("[qlog] registe hook (%s) fail: must be HookSetuper()", name))
+	}
 }
 
 func newHook(name string) (logrus.Hook, error) {
@@ -80,16 +83,12 @@ func newHook(name string) (logrus.Hook, error) {
 	h := reflect.New(typ)
 
 	h.Elem().FieldByName("Name").SetString(name)
-	h.Elem().FieldByName("Enabled").SetBool(true)
 
 	hook := h.Interface().(logrus.Hook)
 
-	if setup, ok := hook.(HookSetuper); ok {
-		if err = setup.Setup(); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, fmt.Errorf("[qlog] hook(%s) has no Setup() func", name)
+	setuper, _ := hook.(HookSetuper)
+	if err = setuper.Setup(); err != nil {
+		return nil, err
 	}
 
 	return hook, nil

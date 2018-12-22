@@ -5,17 +5,16 @@ import (
 	"reflect"
 )
 
+const (
+	keyStdoutEnabled = "logger.stdout.enabled"
+	keyStdoutLevel   = "logger.stdout.level"
+)
+
 type StdoutHook struct {
 	BaseHook
 }
 
 func (h *StdoutHook) Setup() error {
-	var err error
-
-	if err = v.UnmarshalKey("logger.stdout", h); err != nil {
-		return err
-	}
-
 	h.baseSetup()
 
 	h.writer = os.Stdout
@@ -23,6 +22,10 @@ func (h *StdoutHook) Setup() error {
 	return nil
 }
 
-func init() {
+var _InitStdoutHook = func() interface{} {
+	gCommandLine.Bool(keyStdoutEnabled, true, "logger.stdout.enabled")
+	gCommandLine.String(keyStdoutLevel, "error", "logger.stdout.level")
+
 	registerHook("stdout", reflect.TypeOf(StdoutHook{}))
-}
+	return nil
+}()
