@@ -6,6 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
+var _InitJSONFormat = func() interface{} {
 	registeFormatter("json", reflect.TypeOf(logrus.JSONFormatter{}))
-}
+
+	return nil
+}()

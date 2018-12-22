@@ -138,6 +138,7 @@ func (f *ClassicFormatter) appendValue(b *bytes.Buffer, value interface{}) {
 	b.WriteString(fmt.Sprintf("%s", stringVal))
 }
 
-func init() {
+var _InitClassicFormatter = func() interface{} {
 	registeFormatter("classic", reflect.TypeOf(ClassicFormatter{}))
-}
+	return nil
+}()

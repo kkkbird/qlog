@@ -6,6 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
+var _initTextFormatter = func() interface{} {
 	registeFormatter("text", reflect.TypeOf(logrus.TextFormatter{}))
-}
+
+	return nil
+}()
