@@ -9,6 +9,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func getLogLevels(baseLevel logrus.Level) (level []logrus.Level) {
+	level = make([]logrus.Level, 0)
+	for i := baseLevel; i > logrus.PanicLevel; i-- {
+		level = append(level, i)
+	}
+	return
+}
+
 type HookSetuper interface {
 	Setup() error
 }
@@ -39,25 +47,25 @@ func (h *BaseHook) Levels() []logrus.Level {
 
 func (h *BaseHook) baseSetup() {
 	// setup levels
-	var level = gDefaultLogLevel
+	var level = gDefaultLogger.Level
 	var err error
 	if h.Level = v.GetString(strings.Join([]string{"logger", h.Name, "level"}, ".")); h.Level != "" {
 		if level, err = logrus.ParseLevel(h.Level); err != nil {
 			fmt.Printf("[qlog] setup hook(%s), parse level fail:%s\n", h.Name, err)
-			level = gDefaultLogLevel
+			level = gDefaultLogger.Level
 		}
 	}
 
-	h.logLevels = logLevels(level)
+	h.logLevels = getLogLevels(level)
 
 	// setup formatters
 	if hookFormatterName := v.GetString(strings.Join([]string{"logger", h.Name, "formatter", "name"}, ".")); hookFormatterName != "" {
 		if h.formatter, err = newFormatter(hookFormatterName, strings.Join([]string{"logger", h.Name, "formatter", "opts"}, ".")); err != nil {
 			fmt.Printf("[qlog] setup hook(%s) formatter(%s) fail:%s\n", h.Name, hookFormatterName, err)
-			h.formatter = gDefaultFormatter
+			h.formatter = gDefaultLogger.Formatter
 		}
 	} else {
-		h.formatter = gDefaultFormatter
+		h.formatter = gDefaultLogger.Formatter
 	}
 }
 
@@ -92,33 +100,4 @@ func newHook(name string) (logrus.Hook, error) {
 	}
 
 	return hook, nil
-}
-
-var gActivedHooks = make(logrus.LevelHooks)
-
-func hasActivedHook() bool {
-	return true
-}
-
-func initHooks() error {
-	var err error
-	var hook logrus.Hook
-
-	for name := range gRegisteredHooks {
-		n := strings.Join([]string{"logger", name, "enabled"}, ".")
-		//fmt.Println("initHooks", n, v.GetBool(n))
-		if v.GetBool(n) == true {
-			if hook, err = newHook(name); err != nil {
-				fmt.Printf("[qlog] init hook(%s) error:%s\n", name, err)
-				continue
-			}
-			gActivedHooks.Add(hook)
-		}
-	}
-
-	return nil
-}
-
-func resetHooks() {
-	gActivedHooks = make(logrus.LevelHooks)
 }

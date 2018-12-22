@@ -128,16 +128,16 @@ func (h *FileHook) create(t time.Time) (f *os.File, filename string, err error) 
 }
 
 var _InitFileHook = func() interface{} {
-	gCommandLine.Bool(keyFileEnabled, false, "logger.file.enabled")
-	gCommandLine.String(keyFileLevel, "debug", "logger.file.level")
-	gCommandLine.String(keyFileDir, "", "logger.file.filedir")
-	gCommandLine.String(keyFileName, "", "logger.file.filename")
-	gCommandLine.Int(keyFileMaxLines, 0, "logger.file.maxlines")
-	gCommandLine.Bool(keyFileDaily, false, "logger.file.daily")
-	gCommandLine.Int(keyFileMaxDays, 0, "logger.file.maxdays")
-	gCommandLine.Bool(keyFileRotate, false, "logger.file.rotate")
-	gCommandLine.String(keyFilePerm, "0440", "logger.file.perm")
-	gCommandLine.String(keyFileRotatePerm, "0660", "logger.file.rotateperm")
+	cli.Bool(keyFileEnabled, false, "logger.file.enabled")
+	cli.String(keyFileLevel, "debug", "logger.file.level")
+	cli.String(keyFileDir, "", "logger.file.filedir")
+	cli.String(keyFileName, "", "logger.file.filename")
+	cli.Int(keyFileMaxLines, 0, "logger.file.maxlines")
+	cli.Bool(keyFileDaily, false, "logger.file.daily")
+	cli.Int(keyFileMaxDays, 0, "logger.file.maxdays")
+	cli.Bool(keyFileRotate, false, "logger.file.rotate")
+	cli.String(keyFilePerm, "0440", "logger.file.perm")
+	cli.String(keyFileRotatePerm, "0660", "logger.file.rotateperm")
 
 	registerHook("file", reflect.TypeOf(FileHook{}))
 

@@ -23,8 +23,8 @@ func (h *StderrHook) Setup() error {
 }
 
 var _InitStderrHook = func() interface{} {
-	gCommandLine.Bool(keyStderrEnabled, true, "logger.stderr.enabled")
-	gCommandLine.String(keyStderrLevel, "error", "logger.stderr.level")
+	cli.Bool(keyStderrEnabled, true, "logger.stderr.enabled")
+	cli.String(keyStderrLevel, "error", "logger.stderr.level")
 
 	registerHook("stderr", reflect.TypeOf(StderrHook{}))
 	return nil

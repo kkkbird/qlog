@@ -23,8 +23,8 @@ func (h *StdoutHook) Setup() error {
 }
 
 var _InitStdoutHook = func() interface{} {
-	gCommandLine.Bool(keyStdoutEnabled, true, "logger.stdout.enabled")
-	gCommandLine.String(keyStdoutLevel, "error", "logger.stdout.level")
+	cli.Bool(keyStdoutEnabled, true, "logger.stdout.enabled")
+	cli.String(keyStdoutLevel, "error", "logger.stdout.level")
 
 	registerHook("stdout", reflect.TypeOf(StdoutHook{}))
 	return nil

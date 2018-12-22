@@ -37,24 +37,3 @@ func newFormatter(name string, key string) (logrus.Formatter, error) {
 
 	return f.Interface().(logrus.Formatter), nil
 }
-
-var gDefaultFormatter logrus.Formatter
-
-func initFormatters() error {
-	var err error
-	defaultFormatterName := v.GetString("logger.formatter.name")
-
-	if defaultFormatterName == "" {
-		gDefaultFormatter = &logrus.TextFormatter{}
-	} else {
-		if gDefaultFormatter, err = newFormatter(defaultFormatterName, "logger.formatter.opts"); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func resetFormatters() {
-	gDefaultFormatter = nil
-}
