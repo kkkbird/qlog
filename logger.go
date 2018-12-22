@@ -14,32 +14,34 @@ import (
 	"github.com/spf13/viper"
 )
 
-// type Logger = logrus.Logger
-type Logger struct {
-	*logrus.Logger
-}
+type Logger = logrus.Logger
+
+// type Logger struct {
+// 	*logrus.Logger
+// }
 
 var (
+	// flagset
+	cli = pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
+
+	// viper
 	v *viper.Viper
 
 	// DefaultLogger : default logger object
-	gDefaultLogger *Logger
-
-	// root logger settings
-	//rootCfg rootConfig
-
-	// flagset
-	cli = pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
+	qLogger *Logger = logrus.StandardLogger()
 )
 
 const (
-	keyRootReportCaller = "logger.reportcaller"
-	keyRootLevel        = "logger.level"
+	keyReportCaller         = "logger.reportcaller"
+	keyDefaultLevel         = "logger.level"
+	keyDefaultFormatterName = "logger.formatter.name"
+	keyDefaultFormatterOpts = "logger.formatter.opts"
 )
 
 func setDefault() {
-	v.SetDefault(keyRootLevel, "debug")
-	v.SetDefault(keyRootReportCaller, false)
+	v.SetDefault(keyReportCaller, false)
+	v.SetDefault(keyDefaultLevel, "debug")
+	v.SetDefault(keyDefaultFormatterName, "text")
 }
 
 func initRootFlags() error {
@@ -83,30 +85,13 @@ func initViper() error {
 }
 
 func resetLogger() {
-	if err := initLogger(); err != nil {
-
-		gDefaultLogger = &Logger{
-			Logger: logrus.StandardLogger(),
-		}
-
-		fmt.Println("[qlog] reload config fail:", err)
+	if err := configLogger(); err != nil {
+		fmt.Printf("[qlog] reload config fail:%s, changes may not take effect!", err)
 	}
 }
 
 func getDefaultFormatter() (logrus.Formatter, error) {
-	var err error
-	var formatter logrus.Formatter
-	defaultFormatterName := v.GetString("logger.formatter.name")
-
-	if defaultFormatterName == "" {
-		formatter = &logrus.TextFormatter{}
-	} else {
-		if formatter, err = newFormatter(defaultFormatterName, "logger.formatter.opts"); err != nil {
-			return nil, err
-		}
-	}
-
-	return formatter, nil
+	return newFormatter(v.GetString(keyDefaultFormatterName), keyDefaultFormatterOpts)
 }
 
 func getActivateHooks() (logrus.LevelHooks, error) {
@@ -133,41 +118,34 @@ func getActivateHooks() (logrus.LevelHooks, error) {
 	return activateHooks, nil
 }
 
-func initLogger() error {
+func configLogger() error {
 	var err error
 
-	reportCaller := v.GetBool(keyRootReportCaller)
+	qLogger.SetReportCaller(v.GetBool(keyReportCaller))
 
-	level, err := logrus.ParseLevel(v.GetString(keyRootLevel))
+	level, err := logrus.ParseLevel(v.GetString(keyDefaultLevel))
 	if err != nil {
 		return fmt.Errorf("get default log level error: %s", err)
 	}
+	qLogger.SetLevel(level)
 
 	formatter, err := getDefaultFormatter()
 	if err != nil {
 		return fmt.Errorf("get default formatters error: %s", err)
 	}
+	qLogger.SetFormatter(formatter)
 
-	gDefaultLogger = &Logger{
-		Logger: &logrus.Logger{
-			Out:          ioutil.Discard,
-			Formatter:    formatter,
-			Hooks:        nil,
-			Level:        level,
-			ExitFunc:     os.Exit,
-			ReportCaller: reportCaller,
-		},
-	}
-
+	// SetLevel and SetFormatter must be called before getActivateHooks.
 	hooks, err := getActivateHooks()
 
 	if err != nil {
 		fmt.Printf("[qlog] get hooks error: %s\n", err)
-		gDefaultLogger.SetOutput(os.Stderr)
+		qLogger.SetOutput(os.Stderr)
 		return nil
 	}
 
-	gDefaultLogger.ReplaceHooks(hooks)
+	qLogger.SetOutput(ioutil.Discard)
+	qLogger.ReplaceHooks(hooks)
 	return nil
 }
 
@@ -182,7 +160,7 @@ func init() {
 		panic(fmt.Sprint("[qlog] init viper error:", err))
 	}
 
-	if err = initLogger(); err != nil {
-		panic(fmt.Sprint("[qlog] initLogger fail:", err))
+	if err = configLogger(); err != nil {
+		panic(fmt.Sprint("[qlog] configLogger fail:", err))
 	}
 }

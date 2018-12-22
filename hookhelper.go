@@ -47,12 +47,12 @@ func (h *BaseHook) Levels() []logrus.Level {
 
 func (h *BaseHook) baseSetup() {
 	// setup levels
-	var level = gDefaultLogger.Level
+	var level = qLogger.Level
 	var err error
 	if h.Level = v.GetString(strings.Join([]string{"logger", h.Name, "level"}, ".")); h.Level != "" {
 		if level, err = logrus.ParseLevel(h.Level); err != nil {
 			fmt.Printf("[qlog] setup hook(%s), parse level fail:%s\n", h.Name, err)
-			level = gDefaultLogger.Level
+			level = qLogger.Level
 		}
 	}
 
@@ -62,10 +62,10 @@ func (h *BaseHook) baseSetup() {
 	if hookFormatterName := v.GetString(strings.Join([]string{"logger", h.Name, "formatter", "name"}, ".")); hookFormatterName != "" {
 		if h.formatter, err = newFormatter(hookFormatterName, strings.Join([]string{"logger", h.Name, "formatter", "opts"}, ".")); err != nil {
 			fmt.Printf("[qlog] setup hook(%s) formatter(%s) fail:%s\n", h.Name, hookFormatterName, err)
-			h.formatter = gDefaultLogger.Formatter
+			h.formatter = qLogger.Formatter
 		}
 	} else {
-		h.formatter = gDefaultLogger.Formatter
+		h.formatter = qLogger.Formatter
 	}
 }
 
