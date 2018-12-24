@@ -20,6 +20,13 @@ type Logger = logrus.Logger
 // 	*logrus.Logger
 // }
 
+type loggerConfig struct {
+	Path []string
+	Name string
+	Typ  string
+	File string
+}
+
 var (
 	// flagset
 	cli = pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
@@ -29,9 +36,18 @@ var (
 
 	// DefaultLogger : default logger object
 	qLogger = logrus.StandardLogger()
+
+	qLoggerConfig = &loggerConfig{
+		Path: make([]string, 0),
+	}
 )
 
 const (
+	keyConfigPath = "logger.config.path"
+	keyConfigName = "logger.config.name"
+	keyConfigType = "logger.config.type"
+	keyConfigFile = "logger.config.file"
+
 	keyReportCaller         = "logger.reportcaller"
 	keyDefaultLevel         = "logger.level"
 	keyDefaultFormatterName = "logger.formatter.name"
@@ -48,6 +64,13 @@ func initFlags() error {
 	cli.Bool(keyReportCaller, false, "logger.reportcaller")
 	cli.String(keyDefaultLevel, "error", "logger.level")
 	cli.String(keyDefaultFormatterName, "text", "logger.formatter.name")
+
+	cli.StringSliceVar(&qLoggerConfig.Path, keyConfigPath, []string{".", "/etc/qlog", "./conf"}, "logger.config.path")
+	cli.StringVar(&qLoggerConfig.Name, keyConfigName, "logger", "logger.config.name")
+	cli.StringVar(&qLoggerConfig.Typ, keyConfigType, "yaml", "logger.config.type")
+
+	cli.StringVar(&qLoggerConfig.File, keyConfigFile, "", "logger.config.file")
+
 	return nil
 }
 
@@ -64,11 +87,13 @@ func initViper() error {
 	setDefault()
 
 	// read from logger.yaml
-	v.AddConfigPath(".")
-	v.AddConfigPath("/etc/qlog")
-	v.AddConfigPath("./conf/")
-	v.SetConfigName("logger")
-	v.SetConfigType("yaml")
+
+	for _, p := range qLoggerConfig.Path {
+		v.AddConfigPath(p)
+	}
+	v.SetConfigName(qLoggerConfig.Name)
+	v.SetConfigType(qLoggerConfig.Typ)
+	v.SetConfigFile(qLoggerConfig.File)
 
 	if err := v.ReadInConfig(); err != nil {
 		// no config file
