@@ -30,7 +30,7 @@ func logName(t time.Time) (name, link string) {
 type FileHook struct {
 	BaseHook
 
-	FileDir    string
+	FilePath   []string
 	FileName   string
 	fileWriter *os.File
 
@@ -75,7 +75,7 @@ func (h *FileHook) Setup() error {
 
 	h.baseSetup()
 
-	h.FileDir = v.GetString(keyFilePath)
+	h.FilePath = v.GetStringSlice(keyFilePath)
 	h.FileName = v.GetString(keyFileName)
 	h.MaxLines = v.GetInt(keyFileMaxLines)
 	h.Daily = v.GetBool(keyFileDaily)
@@ -99,21 +99,21 @@ func (h *FileHook) Setup() error {
 // successfully, create also attempts to update the symlink for that tag, ignoring
 // errors.
 func (h *FileHook) create(t time.Time) (f *os.File, filename string, err error) {
-	// logDirs lists the candidate directories for new log files.
-	var logDirs []string
+	// logPaths lists the candidate directories for new log files.
+	var logPaths []string
 
-	if len(h.FileDir) > 0 {
-		logDirs = append(logDirs, h.FileDir)
+	for _, path := range h.FilePath {
+		logPaths = append(logPaths, path)
 	}
-	//logDirs = append(logDirs, os.TempDir())
+	//logPaths = append(logPaths, os.TempDir())
 
-	if len(logDirs) == 0 {
-		return nil, "", fmt.Errorf("logDirs <%q> not exist", logDirs)
+	if len(logPaths) == 0 {
+		return nil, "", fmt.Errorf("logPaths <%q> not exist", logPaths)
 	}
 
 	name, link := logName(t)
 	var lastErr error
-	for _, dir := range logDirs {
+	for _, dir := range logPaths {
 		fname := filepath.Join(dir, name)
 		f, err := os.Create(fname)
 		if err == nil {
@@ -131,7 +131,7 @@ var _InitFileHook = func() interface{} {
 	cli.Bool(keyFileEnabled, false, "logger.file.enabled")
 	cli.String(keyFileLevel, "", "logger.file.level") // DONOT set default level in pflag
 
-	cli.String(keyFilePath, "", "logger.file.path")
+	cli.StringSlice(keyFilePath, []string{}, "logger.file.path")
 	cli.String(keyFileName, "", "logger.file.name")
 	cli.Int(keyFileMaxLines, 0, "logger.file.maxlines")
 	cli.Bool(keyFileDaily, false, "logger.file.daily")

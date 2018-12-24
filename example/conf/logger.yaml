@@ -1,28 +1,18 @@
 logger:
   level: debug
-  reportcaller: true
+  reportcaller: false
   formatter: 
     name: text
     opts:
-      forcecolors: false
-      disablecolor: false
-      disabletimestamp: true
-      fulltimestamp: true
-      timestampformat: "2006-01-02 15:04:05"
-
-  stderr:
-    enabled: true
-    level: error
-    formatter:
-      name: json
+      forcecolors: true      
 
   stdout:
     enabled: true
-    level: info
+    level: warn
 
   file:
     enabled: true
-    filedir: .\log
+    path: ./log
     level: trace
     formatter:
       name: classic
