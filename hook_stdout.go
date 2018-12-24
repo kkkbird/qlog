@@ -23,8 +23,8 @@ func (h *StdoutHook) Setup() error {
 }
 
 var _InitStdoutHook = func() interface{} {
-	cli.Bool(keyStdoutEnabled, true, "logger.stdout.enabled")
-	cli.String(keyStdoutLevel, "error", "logger.stdout.level")
+	cli.Bool(keyStdoutEnabled, false, "logger.stdout.enabled")
+	cli.String(keyStdoutLevel, "", "logger.stdout.level") // DONOT set default level in pflag
 
 	registerHook("stdout", reflect.TypeOf(StdoutHook{}))
 	return nil

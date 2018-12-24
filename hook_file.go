@@ -129,7 +129,8 @@ func (h *FileHook) create(t time.Time) (f *os.File, filename string, err error) 
 
 var _InitFileHook = func() interface{} {
 	cli.Bool(keyFileEnabled, false, "logger.file.enabled")
-	cli.String(keyFileLevel, "debug", "logger.file.level")
+	cli.String(keyFileLevel, "", "logger.file.level") // DONOT set default level in pflag
+
 	cli.String(keyFileDir, "", "logger.file.filedir")
 	cli.String(keyFileName, "", "logger.file.filename")
 	cli.Int(keyFileMaxLines, 0, "logger.file.maxlines")

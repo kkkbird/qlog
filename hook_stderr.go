@@ -23,8 +23,8 @@ func (h *StderrHook) Setup() error {
 }
 
 var _InitStderrHook = func() interface{} {
-	cli.Bool(keyStderrEnabled, true, "logger.stderr.enabled")
-	cli.String(keyStderrLevel, "error", "logger.stderr.level")
+	cli.Bool(keyStderrEnabled, false, "logger.stderr.enabled")
+	cli.String(keyStderrLevel, "", "logger.stderr.level") // DONOT set default level in pflag
 
 	registerHook("stderr", reflect.TypeOf(StderrHook{}))
 	return nil

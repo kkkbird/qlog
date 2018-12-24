@@ -13,14 +13,10 @@ const (
 )
 
 var (
-	gRegisteredFormatters map[string]reflect.Type
+	gRegisteredFormatters = make(map[string]reflect.Type)
 )
 
 func registeFormatter(name string, typ reflect.Type) {
-	if gRegisteredFormatters == nil {
-		gRegisteredFormatters = make(map[string]reflect.Type)
-	}
-
 	gRegisteredFormatters[name] = typ
 }
 

@@ -45,6 +45,9 @@ func setDefault() {
 }
 
 func initFlags() error {
+	cli.Bool(keyReportCaller, false, "logger.reportcaller")
+	cli.String(keyDefaultLevel, "error", "logger.level")
+	cli.String(keyDefaultFormatterName, "text", "logger.formatter.name")
 	return nil
 }
 
@@ -78,6 +81,8 @@ func initViper() error {
 			resetLogger()
 		})
 	}
+
+	//v.Debug()
 
 	return nil
 }
@@ -122,6 +127,7 @@ func configLogger() error {
 	qLogger.SetReportCaller(v.GetBool(keyReportCaller))
 
 	level, err := logrus.ParseLevel(v.GetString(keyDefaultLevel))
+
 	if err != nil {
 		return fmt.Errorf("get default log level error: %s", err)
 	}
