@@ -1,8 +1,6 @@
 # qlog
 
-Logging system based on [logrus](https://github.com/sirupsen/logrus)
-
----
+Logging system based on [sirupsen/logrus](https://github.com/sirupsen/logrus)
 
 ## Simple example
 
@@ -21,8 +19,6 @@ func main() {
     log.Warn("This is a WARN message")
 }
 ```
-
----
 
 ## Configurations
 
@@ -95,8 +91,6 @@ base on [spf13/pflag](https://github.com/spf13/pflag), you can add flags to over
 * config
 * default
 
----
-
 ## Formatters
 
 all formatters will have a `name` field and several `opts` fields, example:
@@ -137,8 +131,6 @@ a classic logger formatter
 2018/12/24 19:15:28.307807+08:00 [E] This is a ERROR message
 2018/12/24 19:15:28.307819+08:00 [W] This is a WithField WARN message foo=bar
 ```
-
----
 
 ## Hooks
 
@@ -185,8 +177,6 @@ logger:
 * logger.file.rotate: not implement
 * logger.file.perm: not implement
 * logger.file.rotateperm: not implement
-
----
 
 ## HOWTO
 
