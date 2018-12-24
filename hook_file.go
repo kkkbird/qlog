@@ -12,7 +12,7 @@ import (
 // logName returns a new log file name containing tag, with start time t, and
 // the name for the symlink for tag.
 func logName(t time.Time) (name, link string) {
-	name = fmt.Sprintf("%s.%04d%02d%02d-%02d%02d%02d.%s.%s.PID%d.log",
+	name = fmt.Sprintf("%s.%04d%02d%02d.%02d%02d%02d.%s.%s.PID%d.log",
 		gProgram,
 		t.Year(),
 		t.Month(),

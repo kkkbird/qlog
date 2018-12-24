@@ -4,11 +4,11 @@ logger:
   formatter: 
     name: text
     opts:
-      forcecolors: true      
+      forcecolors: false      
 
   stdout:
     enabled: true
-    level: warn
+    level: error
 
   file:
     enabled: true

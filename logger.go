@@ -65,7 +65,7 @@ func initFlags() error {
 	cli.String(keyDefaultLevel, "error", "logger.level")
 	cli.String(keyDefaultFormatterName, "text", "logger.formatter.name")
 
-	cli.StringSliceVar(&qLoggerConfig.Path, keyConfigPath, []string{".", "/etc/qlog", "./conf"}, "logger.config.path")
+	cli.StringSliceVar(&qLoggerConfig.Path, keyConfigPath, []string{".", "./conf", "/etc/qlog"}, "logger.config.path")
 	cli.StringVar(&qLoggerConfig.Name, keyConfigName, "logger", "logger.config.name")
 	cli.StringVar(&qLoggerConfig.Typ, keyConfigType, "yaml", "logger.config.type")
 
@@ -87,12 +87,15 @@ func initViper() error {
 	setDefault()
 
 	// read from config file
-	for _, p := range qLoggerConfig.Path {
-		v.AddConfigPath(p)
+	if len(qLoggerConfig.File) > 0 {
+		v.SetConfigFile(qLoggerConfig.File)
+	} else {
+		for _, p := range qLoggerConfig.Path {
+			v.AddConfigPath(p)
+		}
+		v.SetConfigName(qLoggerConfig.Name)
 	}
-	v.SetConfigName(qLoggerConfig.Name)
 	v.SetConfigType(qLoggerConfig.Typ)
-	v.SetConfigFile(qLoggerConfig.File)
 
 	if err := v.ReadInConfig(); err != nil {
 		// no config file
