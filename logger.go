@@ -25,10 +25,10 @@ var (
 	cli = pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
 
 	// viper
-	v *viper.Viper
+	v = viper.New()
 
 	// DefaultLogger : default logger object
-	qLogger *Logger = logrus.StandardLogger()
+	qLogger = logrus.StandardLogger()
 )
 
 const (
@@ -44,13 +44,11 @@ func setDefault() {
 	v.SetDefault(keyDefaultFormatterName, "text")
 }
 
-func initRootFlags() error {
+func initFlags() error {
 	return nil
 }
 
 func initViper() error {
-	v = viper.New()
-
 	// read from flags
 	cli.Parse(os.Args[1:])
 	v.BindPFlags(cli)
@@ -154,6 +152,10 @@ func init() {
 
 	if err = initSysParams(); err != nil {
 		panic(fmt.Sprint("[qlog] init system param error:", err))
+	}
+
+	if err = initFlags(); err != nil {
+		panic(fmt.Sprint("[qlog] init flags error:", err))
 	}
 
 	if err = initViper(); err != nil {

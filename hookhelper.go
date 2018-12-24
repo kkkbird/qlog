@@ -69,9 +69,13 @@ func (h *BaseHook) baseSetup() {
 	}
 }
 
-var gRegisteredHooks = make(map[string]reflect.Type)
+var gRegisteredHooks map[string]reflect.Type
 
 func registerHook(name string, typ reflect.Type) {
+	if gRegisteredHooks == nil {
+		gRegisteredHooks = make(map[string]reflect.Type)
+	}
+
 	gRegisteredHooks[name] = typ
 
 	if _, ok := reflect.New(typ).Interface().(HookSetuper); !ok {
