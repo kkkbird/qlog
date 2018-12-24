@@ -86,8 +86,7 @@ func initViper() error {
 	// set default
 	setDefault()
 
-	// read from logger.yaml
-
+	// read from config file
 	for _, p := range qLoggerConfig.Path {
 		v.AddConfigPath(p)
 	}
@@ -169,6 +168,7 @@ func configLogger() error {
 
 	if err != nil {
 		fmt.Printf("[qlog] get hooks error: %s\n", err)
+		qLogger.ReplaceHooks(nil)
 		qLogger.SetOutput(os.Stderr)
 		return nil
 	}

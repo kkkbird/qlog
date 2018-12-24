@@ -57,8 +57,8 @@ type FileHook struct {
 const (
 	keyFileEnabled    = "logger.file.enabled"
 	keyFileLevel      = "logger.file.level"
-	keyFileDir        = "logger.file.filedir"
-	keyFileName       = "logger.file.filename"
+	keyFilePath       = "logger.file.path"
+	keyFileName       = "logger.file.name"
 	keyFileMaxLines   = "logger.file.maxlines"
 	keyFileDaily      = "logger.file.daily"
 	keyFileMaxDays    = "logger.file.maxdays"
@@ -75,7 +75,7 @@ func (h *FileHook) Setup() error {
 
 	h.baseSetup()
 
-	h.FileDir = v.GetString(keyFileDir)
+	h.FileDir = v.GetString(keyFilePath)
 	h.FileName = v.GetString(keyFileName)
 	h.MaxLines = v.GetInt(keyFileMaxLines)
 	h.Daily = v.GetBool(keyFileDaily)
@@ -131,8 +131,8 @@ var _InitFileHook = func() interface{} {
 	cli.Bool(keyFileEnabled, false, "logger.file.enabled")
 	cli.String(keyFileLevel, "", "logger.file.level") // DONOT set default level in pflag
 
-	cli.String(keyFileDir, "", "logger.file.filedir")
-	cli.String(keyFileName, "", "logger.file.filename")
+	cli.String(keyFilePath, "", "logger.file.path")
+	cli.String(keyFileName, "", "logger.file.name")
 	cli.Int(keyFileMaxLines, 0, "logger.file.maxlines")
 	cli.Bool(keyFileDaily, false, "logger.file.daily")
 	cli.Int(keyFileMaxDays, 0, "logger.file.maxdays")
