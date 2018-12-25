@@ -175,3 +175,8 @@ func Panicln(args ...interface{}) {
 func Fatalln(args ...interface{}) {
 	qLogger.Fatalln(args...)
 }
+
+// FilterFlags filter --logger.xxx flags
+func FilterFlags(args []string) []string {
+	return filterLoggerFlags(args, false)
+}

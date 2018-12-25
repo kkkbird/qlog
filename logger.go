@@ -29,7 +29,7 @@ type loggerConfig struct {
 
 var (
 	// flagset
-	cli = pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
+	cli = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 
 	// viper
 	v = viper.New()
@@ -76,7 +76,7 @@ func initFlags() error {
 
 func initViper() error {
 	// read from flags
-	cli.Parse(os.Args[1:])
+	cli.Parse(filterLoggerFlags(os.Args[1:], true))
 	v.BindPFlags(cli)
 
 	// read from env

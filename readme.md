@@ -8,15 +8,15 @@ Logging system based on [sirupsen/logrus](https://github.com/sirupsen/logrus)
 package main
 
 import (
-    "flag"
+  "flag"
 
-    log "github.com/kkkbird/qlog"
+  log "github.com/kkkbird/qlog"
 )
 
 func main() {
-    log.Debug("This is a DEBUG message")
-    log.Info("This is a INFO message")
-    log.Warn("This is a WARN message")
+  log.Debug("This is a DEBUG message")
+  log.Info("This is a INFO message")
+  log.Warn("This is a WARN message")
 }
 ```
 
@@ -192,14 +192,46 @@ you should only use functions exported by qlog which is just same as `logrus`
 package main
 
 import (
-    _ "github.com/kkkbird/qlog" // add this line
-    log "github.com/sirupsen/logrus"
+  _ "github.com/kkkbird/qlog" // add this line
+  log "github.com/sirupsen/logrus"
 )
 
 func main() {
-    log.Debug("This is a DEBUG message")
-    log.Info("This is a INFO message")
-    log.Warn("This is a WARN message")
+  log.Debug("This is a DEBUG message")
+  log.Info("This is a INFO message")
+  log.Warn("This is a WARN message")
 }
 
+```
+
+### Use flags
+
+If you want use goflag in the app with qlog, you must set your own flag parser now and call logger flag at the end of cmd line. 
+
+For example,
+
+your app.go
+
+```go
+package main
+
+import (
+  "flag"
+  "os"
+
+  log "github.com/kkkbird/qlog"
+)
+
+var cli = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+var appHost string
+
+func init() {
+  cli.StringVar(&appHost, "apphost", "https://apphost.cn", "App host url")
+}
+
+func main() {
+  cli.Parse(log.FilterFlags(os.Args[1:]))
+  log.Debug("app host:", appHost)
+}
 ```

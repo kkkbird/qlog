@@ -40,3 +40,21 @@ func initSysParams() error {
 
 	return nil
 }
+
+func filterLoggerFlags(args []string, keep bool) []string {
+	rlt := make([]string, 0)
+
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--logger.") {
+			if keep {
+				rlt = append(rlt, arg)
+			}
+		} else {
+			if !keep {
+				rlt = append(rlt, arg)
+			}
+		}
+	}
+
+	return rlt
+}
