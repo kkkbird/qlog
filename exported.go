@@ -8,6 +8,11 @@ import (
 
 // copy from logrus
 
+// StandardLogger returns default logger, direct access to Logger object is not recommended in qlog
+func StandardLogger() *Logger {
+	return logrus.StandardLogger()
+}
+
 // WithError creates an entry from the standard logger and adds an error to it, using the value defined in ErrorKey as key.
 func WithError(err error) *logrus.Entry {
 	return qLogger.WithField(logrus.ErrorKey, err)
