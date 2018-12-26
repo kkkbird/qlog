@@ -10,10 +10,12 @@ const (
 	keyStderrLevel   = "logger.stderr.level"
 )
 
+// StderrHook output message to stderr
 type StderrHook struct {
 	BaseHook
 }
 
+// Setup function for StderrHook
 func (h *StderrHook) Setup() error {
 	h.baseSetup()
 

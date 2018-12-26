@@ -10,10 +10,12 @@ const (
 	keyStdoutLevel   = "logger.stdout.level"
 )
 
+// StdoutHook output message to StdoutHook
 type StdoutHook struct {
 	BaseHook
 }
 
+// Setup function for StdoutHook
 func (h *StdoutHook) Setup() error {
 	h.baseSetup()
 

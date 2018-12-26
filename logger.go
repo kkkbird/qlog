@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Logger is an alias of logrus.Logger
 type Logger = logrus.Logger
 
 // type Logger struct {

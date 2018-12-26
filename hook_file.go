@@ -27,6 +27,7 @@ func logName(t time.Time) (name, link string) {
 	return name, fmt.Sprintf("%s.log", gProgram)
 }
 
+// FileHook implement file support of logger hook
 type FileHook struct {
 	BaseHook
 
@@ -70,6 +71,7 @@ const (
 // MaxSize is the maximum size of a log file in bytes.
 var MaxSize uint64 = 1024 * 1024 * 1800
 
+// Setup function for FileHook
 func (h *FileHook) Setup() error {
 	var err error
 

@@ -34,12 +34,15 @@ func prefixFieldClashes(data logrus.Fields, hasCaller bool) {
 	}
 }
 
+// ShortLevel is a simple char to indicate log level
 type ShortLevel uint32
 
 // Convert the Level to a string. E.g. PanicLevel becomes "panic".
 func (level ShortLevel) String() string {
 	_level := logrus.Level(level)
 	switch _level {
+	case logrus.TraceLevel:
+		return "T"
 	case logrus.DebugLevel:
 		return "D"
 	case logrus.InfoLevel:

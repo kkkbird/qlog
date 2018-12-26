@@ -17,10 +17,12 @@ func getLogLevels(baseLevel logrus.Level) (level []logrus.Level) {
 	return
 }
 
+// HookSetuper is the base interface a qlog hook must implement
 type HookSetuper interface {
 	Setup() error
 }
 
+// BaseHook for some common function for hooks in qlog
 type BaseHook struct {
 	Name  string
 	Level string
@@ -30,6 +32,7 @@ type BaseHook struct {
 	writer    io.Writer
 }
 
+// Fire output message to hook writer
 func (h *BaseHook) Fire(e *logrus.Entry) error {
 	// fmt.Println("fire:", h.Name)
 	dataBytes, err := h.formatter.Format(e)
@@ -41,6 +44,7 @@ func (h *BaseHook) Fire(e *logrus.Entry) error {
 	return err
 }
 
+// Levels return all available debug level of a hook
 func (h *BaseHook) Levels() []logrus.Level {
 	return h.logLevels
 }
