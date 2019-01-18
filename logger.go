@@ -17,6 +17,9 @@ import (
 // Logger is an alias of logrus.Logger
 type Logger = logrus.Logger
 
+// Fields is an alias of logrus.Fields
+type Fields = logrus.Fields
+
 // type Logger struct {
 // 	*logrus.Logger
 // }
