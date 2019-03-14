@@ -39,7 +39,7 @@ var (
 	v = viper.New()
 
 	// DefaultLogger : default logger object
-	qLogger = logrus.StandardLogger()
+	qLogger = StandardLogger()
 
 	qLoggerConfig = &loggerConfig{
 		Path: make([]string, 0),
