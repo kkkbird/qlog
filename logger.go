@@ -104,7 +104,8 @@ func initViper() error {
 	if err := v.ReadInConfig(); err != nil {
 		switch err.(type) {
 		case viper.ConfigFileNotFoundError:
-			// no config file
+			// no config file, enable stdout by default
+			v.SetDefault("logger.stdout.enabled", true)
 		default:
 			return err
 		}
