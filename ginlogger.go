@@ -34,7 +34,7 @@ func GinLogger(logger ...*Entry) gin.HandlerFunc {
 		referer := c.Request.Referer()
 		hostname, err := os.Hostname()
 		if err != nil {
-			hostname = "unknow"
+			hostname = "unknown"
 		}
 		dataLength := c.Writer.Size()
 		if dataLength < 0 {
