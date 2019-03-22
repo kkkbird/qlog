@@ -102,8 +102,12 @@ func initViper() error {
 	v.SetConfigType(qLoggerConfig.Typ)
 
 	if err := v.ReadInConfig(); err != nil {
-		// no config file
-		// return err
+		switch err.(type) {
+		case viper.ConfigFileNotFoundError:
+			// no config file
+		default:
+			return err
+		}
 	} else {
 		// watch configs changes
 		v.WatchConfig()
