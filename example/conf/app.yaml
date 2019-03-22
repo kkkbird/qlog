@@ -1,0 +1,12 @@
+version: 6
+log:
+  stderr:
+    enabled: true
+    level: error
+  stdout:
+    enabled: true
+    level: debug
+
+test:
+  mystring: "hello"
+  myint: 557

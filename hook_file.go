@@ -2,74 +2,33 @@ package qlog
 
 import (
 	"fmt"
-	"io"
 	"os"
-	"path/filepath"
 	"reflect"
 	"time"
-)
 
-// logName returns a new log file name containing tag, with start time t, and
-// the name for the symlink for tag.
-func logName(t time.Time) (name, link string) {
-	name = fmt.Sprintf("%s.%04d%02d%02d.%02d%02d%02d.%s.%s.PID%d.log",
-		gProgram,
-		t.Year(),
-		t.Month(),
-		t.Day(),
-		t.Hour(),
-		t.Minute(),
-		t.Second(),
-		gHost,
-		gUserName,
-		gPid,
-	)
-	return name, fmt.Sprintf("%s.log", gProgram)
-}
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+)
 
 // FileHook implement file support of logger hook
 type FileHook struct {
 	BaseHook
 
-	FilePath   []string
-	FileName   string
-	fileWriter *os.File
+	FilePath string
 
-	// Rotate at line
-	MaxLines         int
-	maxLinesCurLines int
-
-	// Rotate at size
-	MaxSize        int
-	maxSizeCurSize int
-
-	// Rotate daily
-	Daily         bool
-	MaxDays       int
-	dailyOpenDate int
-	dailyOpenTime time.Time
-
-	Rotate bool
-
-	Perm       string
-	RotatePerm string
+	// Rotate params
+	RotateTime   time.Duration // 0 means do not rotate
+	RotateMaxAge time.Duration // time to wait until old logs are purged, default 7 days, set 0 to disable
+	RotateCount  uint          // the number of files shoudl be kept, default 0 means disabled
 }
 
 const (
-	keyFileEnabled    = "logger.file.enabled"
-	keyFileLevel      = "logger.file.level"
-	keyFilePath       = "logger.file.path"
-	keyFileName       = "logger.file.name"
-	keyFileMaxLines   = "logger.file.maxlines"
-	keyFileDaily      = "logger.file.daily"
-	keyFileMaxDays    = "logger.file.maxdays"
-	keyFileRotate     = "logger.file.rotate"
-	keyFilePerm       = "logger.file.perm"
-	keyFileRotatePerm = "logger.file.rotateperm"
+	keyFileEnabled      = "logger.file.enabled"
+	keyFileLevel        = "logger.file.level"
+	keyFilePath         = "logger.file.path"
+	keyFileRotateTime   = "logger.file.rotate.time"
+	keyFileRotateMaxAge = "logger.file.rotate.maxage"
+	keyFileRotateCount  = "logger.file.rotate.count"
 )
-
-// MaxSize is the maximum size of a log file in bytes.
-var MaxSize uint64 = 1024 * 1024 * 1800
 
 // Setup function for FileHook
 func (h *FileHook) Setup() error {
@@ -77,70 +36,47 @@ func (h *FileHook) Setup() error {
 
 	h.baseSetup()
 
-	h.FilePath = v.GetStringSlice(keyFilePath)
-	h.FileName = v.GetString(keyFileName)
-	h.MaxLines = v.GetInt(keyFileMaxLines)
-	h.Daily = v.GetBool(keyFileDaily)
-	h.MaxDays = v.GetInt(keyFileMaxDays)
-	h.Rotate = v.GetBool(keyFileRotate)
-	h.Perm = v.GetString(keyFilePerm)
-	h.RotatePerm = v.GetString(keyFileRotatePerm)
+	h.FilePath = v.GetString(keyFilePath)
 
-	var f io.Writer
-	if f, _, err = h.create(time.Now()); err != nil {
-		return err
+	rotateTime := v.GetString(keyFileRotateTime)
+
+	if len(rotateTime) > 0 {
+		if h.RotateTime, err = time.ParseDuration(rotateTime); err != nil {
+			return fmt.Errorf("Parse logger.file.rotate.time fail: %s", err)
+		}
+
+		if h.RotateMaxAge, err = time.ParseDuration(v.GetString(keyFileRotateMaxAge)); err != nil {
+			return fmt.Errorf("Parse logger.file.rotate.maxage fail: %s", err)
+		}
+
+		h.RotateCount = uint(v.GetInt(keyFileRotateCount))
+
+		if h.writer, err = rotatelogs.New(
+			h.FilePath+".%Y%m%d%H%M",
+			rotatelogs.WithLinkName(h.FilePath),
+			rotatelogs.WithMaxAge(h.RotateMaxAge),
+			rotatelogs.WithRotationTime(h.RotateTime),
+			rotatelogs.WithRotationCount(h.RotateCount),
+		); err != nil {
+			return fmt.Errorf("Create rotate log fail: %s", err)
+		}
+	} else {
+		if h.writer, err = os.Create(h.FilePath); err != nil {
+			return fmt.Errorf("Create log fail: %s", err)
+		}
 	}
-
-	h.writer = f
 
 	return nil
-}
-
-// create creates a new log file and returns the file and its filename, which
-// contains tag ("INFO", "FATAL", etc.) and t.  If the file is created
-// successfully, create also attempts to update the symlink for that tag, ignoring
-// errors.
-func (h *FileHook) create(t time.Time) (f *os.File, filename string, err error) {
-	// logPaths lists the candidate directories for new log files.
-	var logPaths []string
-
-	for _, path := range h.FilePath {
-		logPaths = append(logPaths, path)
-	}
-	//logPaths = append(logPaths, os.TempDir())
-
-	if len(logPaths) == 0 {
-		return nil, "", fmt.Errorf("logPaths <%q> not exist", logPaths)
-	}
-
-	name, link := logName(t)
-	var lastErr error
-	for _, dir := range logPaths {
-		fname := filepath.Join(dir, name)
-		f, err := os.Create(fname)
-		if err == nil {
-			symlink := filepath.Join(dir, link)
-			os.Remove(symlink)        // ignore err
-			os.Symlink(name, symlink) // ignore err
-			return f, fname, nil
-		}
-		lastErr = err
-	}
-	return nil, "", fmt.Errorf("cannot create log: %v", lastErr)
 }
 
 var _InitFileHook = func() interface{} {
 	cli.Bool(keyFileEnabled, false, "logger.file.enabled")
 	cli.String(keyFileLevel, "", "logger.file.level") // DONOT set default level in pflag
 
-	cli.StringSlice(keyFilePath, []string{}, "logger.file.path")
-	cli.String(keyFileName, "", "logger.file.name")
-	cli.Int(keyFileMaxLines, 0, "logger.file.maxlines")
-	cli.Bool(keyFileDaily, false, "logger.file.daily")
-	cli.Int(keyFileMaxDays, 0, "logger.file.maxdays")
-	cli.Bool(keyFileRotate, false, "logger.file.rotate")
-	cli.String(keyFilePerm, "0440", "logger.file.perm")
-	cli.String(keyFileRotatePerm, "0660", "logger.file.rotateperm")
+	cli.String(keyFilePath, "qlogger.log", "logger.file.path")
+	cli.String(keyFileRotateTime, "1d", "logger.file.rotate.time")
+	cli.String(keyFileRotateMaxAge, "7d", "logger.file.rotate.maxag")
+	cli.String(keyFileRotateCount, "0", "logger.file.rotate.count")
 
 	registerHook("file", reflect.TypeOf(FileHook{}))
 

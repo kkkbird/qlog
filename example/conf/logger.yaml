@@ -8,11 +8,15 @@ logger:
 
   stdout:
     enabled: true
-    level: error
+    level: info
 
   file:
     enabled: true
-    path: ./log
+    path: ./log/message.log
     level: trace
     formatter:
       name: classic
+    rotate:
+      time: 1m
+      maxage: 5m
+      count: 0
