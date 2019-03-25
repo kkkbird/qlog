@@ -12,7 +12,8 @@ logger:
 
   file:
     enabled: true
-    path: ./log/message.log
+    path: ./log/
+    name: message.log
     level: trace
     formatter:
       name: classic

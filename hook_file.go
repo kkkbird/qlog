@@ -3,6 +3,7 @@ package qlog
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"time"
 
@@ -14,6 +15,7 @@ type FileHook struct {
 	BaseHook
 
 	FilePath string
+	FileName string
 
 	// Rotate params
 	RotateTime   time.Duration // 0 means do not rotate
@@ -25,6 +27,7 @@ const (
 	keyFileEnabled      = "logger.file.enabled"
 	keyFileLevel        = "logger.file.level"
 	keyFilePath         = "logger.file.path"
+	keyFileName         = "logger.file.name"
 	keyFileRotateTime   = "logger.file.rotate.time"
 	keyFileRotateMaxAge = "logger.file.rotate.maxage"
 	keyFileRotateCount  = "logger.file.rotate.count"
@@ -33,27 +36,38 @@ const (
 // Setup function for FileHook
 func (h *FileHook) Setup() error {
 	var err error
+	var fullPath string
 
 	h.baseSetup()
 
 	h.FilePath = v.GetString(keyFilePath)
+	h.FileName = v.GetString(keyFileName)
 
 	rotateTime := v.GetString(keyFileRotateTime)
 
-	if len(rotateTime) > 0 {
-		if h.RotateTime, err = time.ParseDuration(rotateTime); err != nil {
-			return fmt.Errorf("Parse logger.file.rotate.time fail: %s", err)
+	if _, err = os.Stat(h.FilePath); err != nil {
+		if os.IsNotExist(err) {
+			return err
 		}
+	}
 
+	if fullPath, err = filepath.Abs(filepath.Join(h.FilePath, h.FileName)); err != nil {
+		return err
+	}
+
+	if h.RotateTime, err = time.ParseDuration(rotateTime); err != nil {
+		return fmt.Errorf("Parse logger.file.rotate.time fail: %s", err)
+	}
+
+	if h.RotateTime > 0 {
 		if h.RotateMaxAge, err = time.ParseDuration(v.GetString(keyFileRotateMaxAge)); err != nil {
 			return fmt.Errorf("Parse logger.file.rotate.maxage fail: %s", err)
 		}
 
 		h.RotateCount = uint(v.GetInt(keyFileRotateCount))
 
-		if h.writer, err = rotatelogs.New(
-			h.FilePath+".%Y%m%d%H%M",
-			rotatelogs.WithLinkName(h.FilePath),
+		if h.writer, err = rotatelogs.New(fullPath+".%Y%m%d%H%M",
+			rotatelogs.WithLinkName(fullPath),
 			rotatelogs.WithMaxAge(h.RotateMaxAge),
 			rotatelogs.WithRotationTime(h.RotateTime),
 			rotatelogs.WithRotationCount(h.RotateCount),
@@ -61,7 +75,7 @@ func (h *FileHook) Setup() error {
 			return fmt.Errorf("Create rotate log fail: %s", err)
 		}
 	} else {
-		if h.writer, err = os.Create(h.FilePath); err != nil {
+		if h.writer, err = os.Create(fullPath); err != nil {
 			return fmt.Errorf("Create log fail: %s", err)
 		}
 	}
@@ -73,7 +87,8 @@ var _InitFileHook = func() interface{} {
 	cli.Bool(keyFileEnabled, false, "logger.file.enabled")
 	cli.String(keyFileLevel, "", "logger.file.level") // DONOT set default level in pflag
 
-	cli.String(keyFilePath, "qlogger.log", "logger.file.path")
+	cli.String(keyFilePath, ".", "logger.file.path")
+	cli.String(keyFileName, "qlog.log", "logger.file.name")
 	cli.String(keyFileRotateTime, "1d", "logger.file.rotate.time")
 	cli.String(keyFileRotateMaxAge, "7d", "logger.file.rotate.maxag")
 	cli.String(keyFileRotateCount, "0", "logger.file.rotate.count")
