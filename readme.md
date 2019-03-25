@@ -171,12 +171,9 @@ logger:
 * logger.file.level
 * logger.file.path: log file paths
 * logger.file.name: log file name
-* logger.file.maxlines: not implement
-* logger.file.daily: not implement
-* logger.file.maxdays: not implement
-* logger.file.rotate: not implement
-* logger.file.perm: not implement
-* logger.file.rotateperm: not implement
+* logger.file.rotate.time: rotate duration, default is "1d", set 0 to disable rotate
+* logger.file.rotate.maxage: time to wait until old logs are purged, default 7 days, set 0 to disable
+* logger.file.rotate.count: the number of files should be kept, default 0 and count is disabled
 
 ## HOWTO
 

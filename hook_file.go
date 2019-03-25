@@ -20,7 +20,7 @@ type FileHook struct {
 	// Rotate params
 	RotateTime   time.Duration // 0 means do not rotate
 	RotateMaxAge time.Duration // time to wait until old logs are purged, default 7 days, set 0 to disable
-	RotateCount  uint          // the number of files shoudl be kept, default 0 means disabled
+	RotateCount  uint          // the number of files should be kept, default 0 means disabled
 }
 
 const (
