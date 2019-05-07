@@ -89,8 +89,8 @@ var _InitFileHook = func() interface{} {
 
 	cli.String(keyFilePath, ".", "logger.file.path")
 	cli.String(keyFileName, "qlog.log", "logger.file.name")
-	cli.String(keyFileRotateTime, "1d", "logger.file.rotate.time")
-	cli.String(keyFileRotateMaxAge, "7d", "logger.file.rotate.maxag")
+	cli.String(keyFileRotateTime, "24h", "logger.file.rotate.time")
+	cli.String(keyFileRotateMaxAge, "168h", "logger.file.rotate.maxag")
 	cli.String(keyFileRotateCount, "0", "logger.file.rotate.count")
 
 	registerHook("file", reflect.TypeOf(FileHook{}))
