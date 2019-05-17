@@ -175,6 +175,12 @@ logger:
 * logger.file.rotate.maxage: time to wait until old logs are purged, default 168h(7 days), set 0 to disable
 * logger.file.rotate.count: the number of files should be kept, default 0 and count is disabled
 
+### UDPHook
+
+* logger.udp.enabled
+* logger.udp.level
+* logger.udp.address
+
 ## HOWTO
 
 ### Common use
