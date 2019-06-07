@@ -3,8 +3,8 @@ package qlog
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
 	"reflect"
+	"runtime"
 
 	"github.com/sirupsen/logrus"
 )
@@ -68,7 +68,11 @@ type ClassicFormatter struct {
 	// DisableTimestamp allows disabling automatic timestamps in output
 	DisableTimestamp bool
 
-	TruncateCallerPath bool
+	// CallerPrettyfier can be set by the user to modify the content
+	// of the function and file keys in the data when ReportCaller is
+	// activated. If any of the returned value is the empty string the
+	// corresponding key will be removed from fields.
+	CallerPrettyfier func(*runtime.Frame) (function string, file string)
 }
 
 // Format renders a single log entry
@@ -95,11 +99,14 @@ func (f *ClassicFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 	//reportcaller is enabled
 	if entry.HasCaller() {
-		if f.TruncateCallerPath {
-			f.appendValueOnly(b, fmt.Sprintf("%s:%d", filepath.Base(entry.Caller.File), entry.Caller.Line))
-		} else {
-			f.appendValueOnly(b, fmt.Sprintf("%s:%d", entry.Caller.File, entry.Caller.Line))
+		funcVal := entry.Caller.Function
+		fileVal := fmt.Sprintf("%s:%d", entry.Caller.File, entry.Caller.Line)
+		if f.CallerPrettyfier != nil {
+			funcVal, fileVal = f.CallerPrettyfier(entry.Caller)
 		}
+
+		f.appendValueOnly(b, fileVal)
+		f.appendValueOnly(b, funcVal)
 	}
 
 	f.appendValueOnly(b, fmt.Sprintf("[%s]", ShortLevel(entry.Level).String()))

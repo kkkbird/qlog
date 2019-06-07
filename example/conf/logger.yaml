@@ -1,10 +1,11 @@
 logger:
   level: debug
-  reportcaller: false
+  reportcaller: true
   formatter: 
     name: text
     opts:
-      forcecolors: false      
+      forcecolors: true
+      prettycaller: omitfunc   
 
   stdout:
     enabled: true
@@ -17,6 +18,8 @@ logger:
     level: trace
     formatter:
       name: classic
+      opts:
+        prettycaller: truncated
     rotate:
       time: 1m
       maxage: 5m

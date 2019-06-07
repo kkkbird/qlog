@@ -36,6 +36,7 @@ logger:
     name: text # default formatter name
     opts: # default formatter opts
       forcecolors: false
+      prettycaller: truncated
 
   stdout:
     enabled: true
@@ -47,6 +48,7 @@ logger:
     level: trace
     formatter:
       name: classic
+      prettycaller: omitfunc
 
 ```
 
@@ -107,6 +109,17 @@ formatters can be set
 * via File: yes
 * via ENV: yes
 * via FLAG: no, only support set default `logger.formatter.name`, hooks' formatter cannot be set via flag
+
+### special formaater options
+
+#### prettycaller
+
+if set and formatter has field `CallerPrettyfier`, caller info will call predefined caller pretty function to output caller info. Only available when `reportcaller` is true
+
+valid options are listed below
+
+* omitfunc
+* truncated
 
 ### NullFormatter
 
