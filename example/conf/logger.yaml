@@ -5,7 +5,7 @@ logger:
     name: text
     opts:
       forcecolors: true
-      prettycaller: omitfunc   
+      prettycaller: truncated   
 
   stdout:
     enabled: true

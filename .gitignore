@@ -2,3 +2,4 @@
 .vscode
 debug
 *.exe
+__debug_bin
