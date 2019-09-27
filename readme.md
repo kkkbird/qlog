@@ -194,6 +194,7 @@ logger:
 * logger.udp.enabled
 * logger.udp.level
 * logger.udp.host
+* logger.udp.uuid
 
 ## HOWTO
 
