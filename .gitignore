@@ -1,5 +1,6 @@
 **\logs
 .vscode
+go.sum
 debug
 *.exe
 __debug_bin
