@@ -8,7 +8,7 @@ import (
 const (
 	keyUDPEnabled = "logger.udp.enabled"
 	keyUDPLevel   = "logger.udp.level"
-	keyUDPAddress = "logger.udp.address"
+	keyUDPHost    = "logger.udp.host"
 )
 
 // TODO: define a udpLogger as writer, use concurrent module to write data
@@ -38,16 +38,16 @@ const (
 type UDPHook struct {
 	BaseHook
 
-	Address string
+	Host string
 }
 
 // Setup function for UDPHook
 func (h *UDPHook) Setup() (err error) {
 	h.baseSetup()
 
-	h.Address = v.GetString(keyUDPAddress)
+	h.Host = v.GetString(keyUDPHost)
 
-	udpAddr, err := net.ResolveUDPAddr("udp", h.Address)
+	udpAddr, err := net.ResolveUDPAddr("udp", h.Host)
 	if err != nil {
 		return err
 	}

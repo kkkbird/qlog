@@ -1,0 +1,9 @@
+module_version: "1.0"
+
+var:
+  - name: paths
+    default:
+      - /var/log/qlog/*/logs  
+
+ingest_pipeline: ../ingest/pipeline-file.json
+input: /config/file-log.yml

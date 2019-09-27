@@ -1,0 +1,9 @@
+version: "3.7"
+services:
+  filebeat:
+    build: .
+    image: kaiserli/filebeat-qlog:7.3.2
+    ports:
+      - "6060:6060/udp"
+    extra_hosts:
+      - "elasticsearch:192.168.1.112"

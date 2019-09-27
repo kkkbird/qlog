@@ -1,0 +1,51 @@
+{
+  "description": "Pipeline for parsing the qlog udp logs",
+  "processors": [
+    {
+      "grok": {
+        "field": "message",
+        "patterns": [
+          "%{QLOG_DATESTAMP:qlog.time} %{NOTSPACE:qlog.file}:%{INT:qlog.line} \\[%{WORD:qlog.level}\\] %{GREEDYDATA:qlog.msg}"
+        ],
+        "pattern_definitions": {
+          "QLOG_DATESTAMP": "QLOG_DATESTAMP %{YEAR}/%{MONTHNUM}/%{MONTHDAY} %{HOUR}:%{MINUTE}:%{SECOND}.%{INT}%{ISO8601_TIMEZONE}"
+        },
+        "ignore_missing": true
+      }
+    },
+    {
+      "remove": {
+        "field": "message"
+      }
+    },
+    {
+      "rename": {
+        "field": "@timestamp",
+        "target_field": "read_timestamp"
+      }
+    },
+    {
+      "date": {
+        "field": "qlog.time",
+        "target_field": "@timestamp",
+        "formats": [
+          "YYYY/MM/dd HH:mm:ss.SSSSSSZ"
+        ],
+        "timezone": "Asia/Shanghai"
+      }
+    },
+    {
+      "remove": {
+        "field": "qlog.time"
+      }
+    }
+  ],
+  "on_failure": [
+    {
+      "set": {
+        "field": "error.message",
+        "value": "{{ _ingest.on_failure_message }}"
+      }
+    }
+  ]
+}

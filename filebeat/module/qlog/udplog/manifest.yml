@@ -1,0 +1,8 @@
+module_version: "1.0"
+
+var:
+  - name: host
+    default: "0.0.0.0:6060"
+
+ingest_pipeline: ../ingest/pipeline-json.json
+input: config/udp-log.yml

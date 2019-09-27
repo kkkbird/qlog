@@ -13,7 +13,7 @@ logger:
 
   file:
     enabled: true
-    path: ./log/
+    path: ./logs/
     name: message.log
     level: trace
     formatter:
@@ -24,3 +24,13 @@ logger:
       time: 1m
       maxage: 5m
       count: 0
+
+  udp:
+    enabled: true
+    level: debug
+    host: 192.168.1.112:6060
+    formatter:
+      name: json
+      opts:
+        prettycaller: truncated
+

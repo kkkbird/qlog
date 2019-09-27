@@ -1,0 +1,12 @@
+# filebeat.config.modules:  
+#   path: ${path.config}/modules.d/*.yml
+#   reload.enabled: true
+
+filebeat.modules:
+  - module: qlog
+  
+setup.template.settings:
+  index.number_of_shards: 3
+  
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
