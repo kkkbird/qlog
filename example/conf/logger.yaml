@@ -1,11 +1,11 @@
 logger:
   level: debug
   reportcaller: true
-  formatter: 
+  formatter:
     name: text
     opts:
       forcecolors: true
-      prettycaller: truncated   
+      prettycaller: truncated
 
   stdout:
     enabled: true
@@ -28,9 +28,11 @@ logger:
   udp:
     enabled: true
     level: debug
-    host: 192.168.1.112:6060
+    uuid: "example"
+    host: 192.168.1.112:6060    
+    #host: localhost:31234
     formatter:
       name: json
       opts:
+        TimestampFormat: "2006-01-02T15:04:05.999Z07:00"
         prettycaller: truncated
-

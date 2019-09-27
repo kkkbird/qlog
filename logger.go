@@ -15,10 +15,10 @@ import (
 )
 
 // Logger is an alias of logrus.Logger
-type Logger = logrus.Logger
+// type Logger = logrus.Logger
 
-// Fields is an alias of logrus.Fields
-type Fields = logrus.Fields
+// // Fields is an alias of logrus.Fields
+// type Fields = logrus.Fields
 
 // type Logger struct {
 // 	*logrus.Logger
@@ -39,7 +39,7 @@ var (
 	v = viper.New()
 
 	// DefaultLogger : default logger object
-	qLogger = StandardLogger()
+	qLogger = logrus.StandardLogger()
 
 	qLoggerConfig = &loggerConfig{
 		Path: make([]string, 0),

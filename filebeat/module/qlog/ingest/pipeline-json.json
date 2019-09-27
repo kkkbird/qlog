@@ -41,7 +41,7 @@
       "grok": {
         "field": "filewithline",
         "patterns": [
-          "%{WORD:qlog.file}:%{INT:qlog.line}"
+          "%{NOTSPACE:qlog.file}:%{INT:qlog.line}"
         ]        
       }
     },

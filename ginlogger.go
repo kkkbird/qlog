@@ -8,18 +8,19 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
-func getGinLogger(logger ...*Entry) *Entry {
+func getGinLogger(logger ...*logrus.Entry) *logrus.Entry {
 	if len(logger) == 0 {
-		return StandardLogger().WithField("pkg", "gin")
+		return logrus.StandardLogger().WithField("pkg", "gin")
 	}
 
 	return logger[0]
 }
 
 // GinLogger is the qlog logger for GIN, copy from https://github.com/toorop/gin-logrus
-func GinLogger(logger ...*Entry) gin.HandlerFunc {
+func GinLogger(logger ...*logrus.Entry) gin.HandlerFunc {
 	log := getGinLogger(logger...)
 
 	return func(c *gin.Context) {
@@ -41,7 +42,7 @@ func GinLogger(logger ...*Entry) gin.HandlerFunc {
 			dataLength = 0
 		}
 
-		entry := log.WithFields(Fields{
+		entry := log.WithFields(logrus.Fields{
 			"hostname":   hostname,
 			"statusCode": statusCode,
 			"latency":    latency, // time to process

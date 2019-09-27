@@ -3,12 +3,15 @@ package qlog
 import (
 	"net"
 	"reflect"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	keyUDPEnabled = "logger.udp.enabled"
 	keyUDPLevel   = "logger.udp.level"
 	keyUDPHost    = "logger.udp.host"
+	keyUDPUUID    = "logger.udp.uuid"
 )
 
 // TODO: define a udpLogger as writer, use concurrent module to write data
@@ -36,15 +39,32 @@ const (
 
 // UDPHook output message to udp
 type UDPHook struct {
-	BaseHook
+	b BaseHook
 
+	Name string // for new hook
 	Host string
+	UUID string
+}
+
+// Fire output message to hook writer
+func (h *UDPHook) Fire(e *logrus.Entry) error {
+	if len(h.UUID) > 0 {
+		e = e.WithField("uuid", h.UUID)
+	}
+	return h.b.Fire(e)
+}
+
+// Levels return all available debug level of a hook
+func (h *UDPHook) Levels() []logrus.Level {
+	return h.b.Levels()
 }
 
 // Setup function for UDPHook
 func (h *UDPHook) Setup() (err error) {
-	h.baseSetup()
+	h.b.Name = h.Name // name is set by reflect
+	h.b.baseSetup()
 
+	h.UUID = v.GetString(keyUDPUUID)
 	h.Host = v.GetString(keyUDPHost)
 
 	udpAddr, err := net.ResolveUDPAddr("udp", h.Host)
@@ -57,7 +77,7 @@ func (h *UDPHook) Setup() (err error) {
 		return err
 	}
 
-	h.writer = conn
+	h.b.writer = conn
 
 	return nil
 }

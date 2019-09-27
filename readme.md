@@ -10,7 +10,8 @@ package main
 import (
   "flag"
 
-  log "github.com/kkkbird/qlog"
+  _ "github.com/kkkbird/qlog" // call qlog hijack
+  log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -192,33 +193,13 @@ logger:
 
 * logger.udp.enabled
 * logger.udp.level
-* logger.udp.address
+* logger.udp.host
 
 ## HOWTO
 
 ### Common use
 
-you should only use functions exported by qlog which is just same as `logrus`
-
-### Migrate from `logrus`
-
-`qlog` hijack the `logrus` default StandardLogger(), so if your project use `logrus` without init logger object your self, you can just add one line code in your main package and keep other codes untouched
-
-```go
-package main
-
-import (
-  _ "github.com/kkkbird/qlog" // add this line
-  log "github.com/sirupsen/logrus"
-)
-
-func main() {
-  log.Debug("This is a DEBUG message")
-  log.Info("This is a INFO message")
-  log.Warn("This is a WARN message")
-}
-
-```
+`qlog` hijack the `logrus` default StandardLogger(), so if your project use `logrus` without init logger object your self, you can just add one line code in your main package as example and keep other codes untouched
 
 ### Use flags
 
@@ -235,7 +216,8 @@ import (
   "flag"
   "os"
 
-  log "github.com/kkkbird/qlog"
+  _ "github.com/kkkbird/qlog"
+  log "github.com/sirupsen/logrus"
 )
 
 var cli = flag.NewFlagSet(os.Args[0], flag.ExitOnError)

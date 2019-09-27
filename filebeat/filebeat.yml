@@ -5,8 +5,11 @@
 filebeat.modules:
   - module: qlog
   
-setup.template.settings:
-  index.number_of_shards: 3
-  
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
+
+setup.template.index.number_of_shards: 3
+
+setup.ilm.enabled: auto
+setup.ilm.rollover_alias: "qlog"
+setup.ilm.pattern: "{now/d}-000001" 
