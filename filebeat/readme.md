@@ -15,4 +15,16 @@
         prettycaller: truncated
 ```
 
-* file: 
+* file: CLASSIC with prettycaller set to truncated / NOT tested
+
+```yaml
+  file:
+    enabled: true
+    path: ./logs/
+    name: message.log
+    level: trace
+    formatter:
+      name: classic
+      opts:
+        prettycaller: truncated
+```
