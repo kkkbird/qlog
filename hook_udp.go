@@ -49,7 +49,8 @@ type UDPHook struct {
 // Fire output message to hook writer
 func (h *UDPHook) Fire(e *logrus.Entry) error {
 	if len(h.UUID) > 0 {
-		e = e.WithField("uuid", h.UUID)
+		e.Data["uuid"] = h.UUID
+		defer delete(e.Data, "uuid")
 	}
 	return h.b.Fire(e)
 }
