@@ -105,8 +105,13 @@ func (f *ClassicFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 			funcVal, fileVal = f.CallerPrettyfier(entry.Caller)
 		}
 
-		f.appendValueOnly(b, fileVal)
-		f.appendValueOnly(b, funcVal)
+		if len(fileVal) > 0 {
+			f.appendValueOnly(b, fileVal)
+		}
+
+		if len(funcVal) > 0 {
+			f.appendValueOnly(b, funcVal)
+		}
 	}
 
 	f.appendValueOnly(b, fmt.Sprintf("[%s]", ShortLevel(entry.Level).String()))
