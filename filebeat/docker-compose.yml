@@ -2,7 +2,7 @@ version: "3.7"
 services:
   filebeat:
     build: .
-    image: kaiserli/filebeat-qlog:7.3.2-1
+    image: kaiserli/filebeat-qlog:7.4.2-1
     ports:
       - "6060:6060/udp"
     extra_hosts:

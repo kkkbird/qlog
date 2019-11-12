@@ -14,25 +14,6 @@
     },
     {
       "rename": {
-        "field": "@timestamp",
-        "target_field": "read_timestamp"
-      }
-    },
-    {
-      "date": {
-        "field": "qlog.time",
-        "target_field": "@timestamp",
-        "formats": ["ISO8601"],
-        "timezone": "Asia/Shanghai"
-      }
-    },
-    {
-      "remove": {
-        "field": "qlog.time"
-      }
-    },
-    {
-      "rename": {
         "field": "qlog.file",
         "target_field": "filewithline"
       }

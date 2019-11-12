@@ -1,0 +1,59 @@
+- key: qlog
+  title: qlog
+  description: >
+    Module for handling logs produced by qlog
+  fields:
+  - name: qlog
+    type: group
+    description: >
+      Fields from qlog logs
+    fields:
+    - name: level
+      type: keyword
+      description: >
+        qlog level
+   
+    - name: file
+      type: keyword
+      description: >
+        qlog file      
+
+    - name: line
+      type: long
+      description: >
+        qlog line
+
+    - name: msg
+      type: text
+      description: >
+        qlog message
+
+    - name: error
+      type: text
+      description: >
+        qlog error
+    
+    - name: app
+      type: keyword
+      description: >
+        app info
+
+    - name: pkg
+      type: keyword
+      description: >
+        app pkg
+    
+    - name: module
+      type: keyword
+      description: >
+        app module
+
+    - name: time
+      type: date_nanos
+      description: >
+        app time
+
+    - name: uuid
+      type: keyword
+      description: >
+        app uuid

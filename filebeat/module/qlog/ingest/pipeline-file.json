@@ -17,27 +17,6 @@
       "remove": {
         "field": "message"
       }
-    },
-    {
-      "rename": {
-        "field": "@timestamp",
-        "target_field": "read_timestamp"
-      }
-    },
-    {
-      "date": {
-        "field": "qlog.time",
-        "target_field": "@timestamp",
-        "formats": [
-          "YYYY/MM/dd HH:mm:ss.SSSSSSZ"
-        ],
-        "timezone": "Asia/Shanghai"
-      }
-    },
-    {
-      "remove": {
-        "field": "qlog.time"
-      }
     }
   ],
   "on_failure": [

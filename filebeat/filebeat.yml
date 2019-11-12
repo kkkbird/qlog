@@ -13,3 +13,6 @@ output.elasticsearch:
 setup.ilm.enabled: auto
 setup.ilm.rollover_alias: "qlog"
 setup.ilm.pattern: "{now/d}-000001" 
+
+setup.template.name: "qlog"
+setup.template.fields: "./qlog-fields.yml"

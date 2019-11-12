@@ -1,4 +1,4 @@
-FROM elastic/filebeat:7.3.2
+FROM elastic/filebeat:7.4.2
 
 ADD --chown=root:filebeat . ./
 
