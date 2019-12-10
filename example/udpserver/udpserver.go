@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	address = "localhost:31234"
+	address = ":31234"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 	ctx := context.Background()
 
 	go func() {
-		buf := make([]byte, 2048)
+		buf := make([]byte, 65535)
 		for {
 			len, _, err := conn.ReadFromUDP(buf)
 
