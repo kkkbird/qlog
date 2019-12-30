@@ -1,7 +1,10 @@
 package qlog
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"strings"
 	"time"
 
 	"math"
@@ -66,5 +69,79 @@ func GinLogger(logger ...*logrus.Entry) gin.HandlerFunc {
 				entry.Trace(msg)
 			}
 		}
+	}
+}
+
+type teeReadCloser struct {
+	io.Reader
+	io.Closer
+}
+
+func TeeReadCloser(rc io.ReadCloser, w io.Writer) io.ReadCloser {
+	tee := io.TeeReader(rc, w)
+	return &teeReadCloser{tee, rc}
+}
+
+type ginResponseMultiWriter struct {
+	gin.ResponseWriter
+	mw io.Writer
+}
+
+func GinMultiWriter(gw gin.ResponseWriter, w io.Writer) gin.ResponseWriter {
+	mw := io.MultiWriter(gw, w)
+
+	return &ginResponseMultiWriter{gw, mw}
+}
+
+func (w *ginResponseMultiWriter) Write(p []byte) (n int, err error) {
+	return w.mw.Write(p)
+}
+
+func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
+	log := getGinLogger(logger...)
+
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		var bufReq, bufRsp bytes.Buffer
+
+		c.Request.Body = TeeReadCloser(c.Request.Body, &bufReq)
+		c.Writer = GinMultiWriter(c.Writer, &bufRsp)
+
+		c.Next()
+		stop := time.Since(start)
+		latency := int(math.Ceil(float64(stop.Nanoseconds()) / 1000000.0))
+		statusCode := c.Writer.Status()
+		clientIP := c.ClientIP()
+
+		entry := log.WithFields(logrus.Fields{
+			"statusCode": statusCode,
+			"latency":    latency, // time to process
+			"clientIP":   clientIP,
+			//"userAgent":  c.Request.UserAgent(),
+		})
+
+		var msg bytes.Buffer
+		msg.WriteString(c.Request.Method)
+		msg.WriteString(" ")
+		msg.WriteString(c.Request.RequestURI)
+
+		if bufReq.Len() > 0 {
+			msg.WriteString(" req:")
+			msg.Write(bufReq.Bytes())
+		}
+
+		rspLen := bufRsp.Len()
+		if rspLen > 0 {
+			contentType := c.Writer.Header().Get("Content-Type")
+			if strings.HasPrefix(contentType, "application/json") {
+				msg.WriteString(" rsp:")
+				msg.Write(bufRsp.Bytes())
+			} else {
+				msg.WriteString(fmt.Sprintf(" rsp: len=%d, content_type=%s", rspLen, contentType))
+			}
+		}
+
+		entry.Debug(msg.String())
 	}
 }
