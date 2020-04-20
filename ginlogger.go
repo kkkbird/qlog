@@ -118,7 +118,7 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 			"statusCode": statusCode,
 			"latency":    latency, // time to process
 			"clientIP":   clientIP,
-			//"userAgent":  c.Request.UserAgent(),
+			"userAgent":  c.Request.UserAgent(),
 		})
 
 		var msg bytes.Buffer
