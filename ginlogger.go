@@ -87,6 +87,10 @@ type ginResponseMultiWriter struct {
 	mw io.Writer
 }
 
+const (
+	trimmedMsgLength = 16 * 1024
+)
+
 func GinMultiWriter(gw gin.ResponseWriter, w io.Writer) gin.ResponseWriter {
 	mw := io.MultiWriter(gw, w)
 
@@ -126,9 +130,18 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 		msg.WriteString(" ")
 		msg.WriteString(c.Request.RequestURI)
 
-		if bufReq.Len() > 0 {
+		reqLen := bufReq.Len()
+
+		if reqLen > 0 {
 			msg.WriteString(" req:")
-			msg.Write(bufReq.Bytes())
+
+			if reqLen > trimmedMsgLength {
+				msg.WriteString(fmt.Sprintf("[%d]", reqLen))
+				msg.Write(bufReq.Bytes()[:trimmedMsgLength-12])
+				msg.WriteString("...")
+			} else {
+				msg.Write(bufReq.Bytes())
+			}
 		}
 
 		rspLen := bufRsp.Len()
@@ -136,7 +149,14 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 			contentType := c.Writer.Header().Get("Content-Type")
 			if strings.HasPrefix(contentType, "application/json") {
 				msg.WriteString(" rsp:")
-				msg.Write(bufRsp.Bytes())
+
+				if rspLen > trimmedMsgLength {
+					msg.WriteString(fmt.Sprintf("[%d]", rspLen))
+					msg.Write(bufRsp.Bytes()[:trimmedMsgLength-12])
+					msg.WriteString("...")
+				} else {
+					msg.Write(bufRsp.Bytes())
+				}
 			} else {
 				msg.WriteString(fmt.Sprintf(" rsp: len=%d, content_type=%s", rspLen, contentType))
 			}
