@@ -133,14 +133,19 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 		reqLen := bufReq.Len()
 
 		if reqLen > 0 {
-			msg.WriteString(" req:")
+			contentType := strings.ToLower(c.Request.Header.Get("Content-Type"))
+			if strings.HasPrefix(contentType, "application/json") {
+				msg.WriteString(" req:")
 
-			if reqLen > trimmedMsgLength {
-				msg.WriteString(fmt.Sprintf("[%d]", reqLen))
-				msg.Write(bufReq.Bytes()[:trimmedMsgLength-12])
-				msg.WriteString("...")
+				if reqLen > trimmedMsgLength {
+					msg.WriteString(fmt.Sprintf("[%d]", reqLen))
+					msg.Write(bufReq.Bytes()[:trimmedMsgLength-12])
+					msg.WriteString("...")
+				} else {
+					msg.Write(bufReq.Bytes())
+				}
 			} else {
-				msg.Write(bufReq.Bytes())
+				msg.WriteString(fmt.Sprintf(" req: len=%d, content_type=%s", reqLen, contentType))
 			}
 		}
 
