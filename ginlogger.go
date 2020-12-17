@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/sirupsen/logrus"
 )
 
@@ -133,8 +134,8 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 		reqLen := bufReq.Len()
 
 		if reqLen > 0 {
-			contentType := strings.ToLower(c.Request.Header.Get("Content-Type"))
-			if strings.HasPrefix(contentType, "application/json") {
+			contentType := c.ContentType()
+			if contentType == binding.MIMEJSON || contentType == binding.MIMEPOSTForm {
 				msg.WriteString(" req:")
 
 				if reqLen > trimmedMsgLength {
@@ -152,7 +153,7 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 		rspLen := bufRsp.Len()
 		if rspLen > 0 {
 			contentType := c.Writer.Header().Get("Content-Type")
-			if strings.HasPrefix(contentType, "application/json") {
+			if strings.HasPrefix(contentType, binding.MIMEJSON) {
 				msg.WriteString(" rsp:")
 
 				if rspLen > trimmedMsgLength {
