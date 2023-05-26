@@ -148,6 +148,8 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 			} else {
 				msg.WriteString(fmt.Sprintf(" req: len=%d, content_type=%s", reqLen, contentType))
 			}
+		} else {
+			msg.WriteString(" req: len=0")
 		}
 
 		rspLen := bufRsp.Len()
@@ -166,6 +168,8 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 			} else {
 				msg.WriteString(fmt.Sprintf(" rsp: len=%d, content_type=%s", rspLen, contentType))
 			}
+		} else {
+			msg.WriteString(" rsp: len=0")
 		}
 
 		entry.Debug(msg.String())
