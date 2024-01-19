@@ -135,7 +135,7 @@ func GinAPILogger(logger ...*logrus.Entry) gin.HandlerFunc {
 
 		if reqLen > 0 {
 			contentType := c.ContentType()
-			if contentType == binding.MIMEJSON || contentType == binding.MIMEPOSTForm {
+			if contentType == binding.MIMEJSON || contentType == binding.MIMEPOSTForm /* || contentType == binding.MIMEMultipartPOSTForm */ {
 				msg.WriteString(" req:")
 
 				if reqLen > trimmedMsgLength {
